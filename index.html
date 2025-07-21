@@ -1,671 +1,1763 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>東京都オープンデータカタログサイト</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <head>
+        <!-- Google Tag Manager GA4-->
+        <script>
+            (function(w, d, s, l, i) {
+                w[l] = w[l] || [];
+                w[l].push({
+                    'gtm.start': new Date().getTime(),
+                    event: 'gtm.js'
+                });
+                var f = d.getElementsByTagName(s)[0]
+                  , j = d.createElement(s)
+                  , dl = l != 'dataLayer' ? '&l=' + l : '';
+                j.async = true;
+                j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+                f.parentNode.insertBefore(j, f);
+            }
+            )(window, document, 'script', 'dataLayer', 'GTM-NQW775C');
+        </script>
+        <!-- End Google Tag Manager -->
+        <!-- Universal Analytics-->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-151340803-1"></script>
+        <script>
+            window.dataLayer = window.dataLayer || []
 
-        body {
-            font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-        }
-
-        /* ヘッダー */
-        .header {
-            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .logo-text h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .logo-text p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-menu a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-menu a:hover {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-
-        /* ヒーローセクション */
-        .hero {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23e3f2fd" width="1200" height="600"/><g opacity="0.1"><circle cx="200" cy="150" r="80" fill="%23333"/><circle cx="800" cy="350" r="60" fill="%23333"/><circle cx="1000" cy="200" r="100" fill="%23333"/></g></svg>');
-            color: white;
-            padding: 4rem 0;
-            text-align: center;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .hero h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        /* 検索バー */
-        .search-container {
-            background: white;
-            padding: 3rem 0;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-        }
-
-        .search-wrapper {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .search-box {
-            display: flex;
-            background: #f8f9fa;
-            border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 1rem 2rem;
-            border: none;
-            font-size: 1.1rem;
-            background: transparent;
-            outline: none;
-        }
-
-        .search-btn {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .search-btn:hover {
-            background: #0052a3;
-            transform: scale(1.05);
-        }
-
-        /* メインコンテンツ */
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        .section {
-            margin-bottom: 4rem;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            color: #0066cc;
-            position: relative;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 3px;
-            background: #0066cc;
-            border-radius: 2px;
-        }
-
-        /* 統計カード */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #0066cc;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 1.1rem;
-            color: #666;
-        }
-
-        /* カテゴリグリッド */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .category-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .category-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #0066cc, #00a8ff);
-        }
-
-        .category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .category-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .category-count {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #0066cc;
-            margin-bottom: 1rem;
-        }
-
-        .category-desc {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        /* 活用事例セクション */
-        .showcase-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .showcase-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .showcase-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .showcase-image {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: #0066cc;
-        }
-
-        .showcase-content {
-            padding: 1.5rem;
-        }
-
-        .showcase-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 1rem;
-        }
-
-        .showcase-desc {
-            color: #666;
-            line-height: 1.6;
-        }
-
-        /* フッター */
-        .footer {
-            background: #2c3e50;
-            color: white;
-            padding: 3rem 0 1rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-section h3 {
-            color: #0066cc;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-links a {
-            color: #bdc3c7;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid #34495e;
-            padding-top: 1rem;
-            text-align: center;
-            color: #95a5a6;
-        }
-
-        /* レスポンシブ対応 */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
+            function gtag() {
+                dataLayer.push(arguments)
             }
 
-            .nav-menu {
+            gtag('js', new Date())
+
+            gtag('config', 'UA-151340803-1')
+        </script>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>東京都オープンデータカタログサイトホームページ</title>
+        <meta name="description" content="東京都のオープンデータを検索・ダウンロードできる「カタログ」サービスです。"/>
+        <meta property="og:site_name" content="東京都オープンデータカタログサイトホームページ"/>
+        <meta property="og:title" content="東京都オープンデータカタログサイトホームページ"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:image" content="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/og.png"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="https://portal.data.metro.tokyo.lg.jp"/>
+        <meta property="og:description" content="東京都のオープンデータを検索・ダウンロードできる「カタログ」サービスです。"/>
+        <link rel="shortcut icon" href="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/favicon.ico" type="image/x-icon">
+        <meta name='robots' content='max-image-preview:large'/>
+        <style>
+            img:is([sizes="auto" i], [sizes^="auto," i]) {
+                contain-intrinsic-size: 3000px 1500px
+            }
+        </style>
+        <link rel='dns-prefetch' href='//use.typekit.net'/>
+        <link rel='dns-prefetch' href='//fonts.googleapis.com'/>
+        <link rel='dns-prefetch' href='//use.fontawesome.com'/>
+        <script type="text/javascript">
+            /* <![CDATA[ */
+            window._wpemojiSettings = {
+                "baseUrl": "https:\/\/s.w.org\/images\/core\/emoji\/15.1.0\/72x72\/",
+                "ext": ".png",
+                "svgUrl": "https:\/\/s.w.org\/images\/core\/emoji\/15.1.0\/svg\/",
+                "svgExt": ".svg",
+                "source": {
+                    "concatemoji": "https:\/\/portal.data.metro.tokyo.lg.jp\/wp-includes\/js\/wp-emoji-release.min.js?ver=6.8"
+                }
+            };
+            /*! This file is auto-generated */
+            !function(i, n) {
+                var o, s, e;
+                function c(e) {
+                    try {
+                        var t = {
+                            supportTests: e,
+                            timestamp: (new Date).valueOf()
+                        };
+                        sessionStorage.setItem(o, JSON.stringify(t))
+                    } catch (e) {}
+                }
+                function p(e, t, n) {
+                    e.clearRect(0, 0, e.canvas.width, e.canvas.height),
+                    e.fillText(t, 0, 0);
+                    var t = new Uint32Array(e.getImageData(0, 0, e.canvas.width, e.canvas.height).data)
+                      , r = (e.clearRect(0, 0, e.canvas.width, e.canvas.height),
+                    e.fillText(n, 0, 0),
+                    new Uint32Array(e.getImageData(0, 0, e.canvas.width, e.canvas.height).data));
+                    return t.every(function(e, t) {
+                        return e === r[t]
+                    })
+                }
+                function u(e, t, n) {
+                    switch (t) {
+                    case "flag":
+                        return n(e, "\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f", "\ud83c\udff3\ufe0f\u200b\u26a7\ufe0f") ? !1 : !n(e, "\ud83c\uddfa\ud83c\uddf3", "\ud83c\uddfa\u200b\ud83c\uddf3") && !n(e, "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f", "\ud83c\udff4\u200b\udb40\udc67\u200b\udb40\udc62\u200b\udb40\udc65\u200b\udb40\udc6e\u200b\udb40\udc67\u200b\udb40\udc7f");
+                    case "emoji":
+                        return !n(e, "\ud83d\udc26\u200d\ud83d\udd25", "\ud83d\udc26\u200b\ud83d\udd25")
+                    }
+                    return !1
+                }
+                function f(e, t, n) {
+                    var r = "undefined" != typeof WorkerGlobalScope && self instanceof WorkerGlobalScope ? new OffscreenCanvas(300,150) : i.createElement("canvas")
+                      , a = r.getContext("2d", {
+                        willReadFrequently: !0
+                    })
+                      , o = (a.textBaseline = "top",
+                    a.font = "600 32px Arial",
+                    {});
+                    return e.forEach(function(e) {
+                        o[e] = t(a, e, n)
+                    }),
+                    o
+                }
+                function t(e) {
+                    var t = i.createElement("script");
+                    t.src = e,
+                    t.defer = !0,
+                    i.head.appendChild(t)
+                }
+                "undefined" != typeof Promise && (o = "wpEmojiSettingsSupports",
+                s = ["flag", "emoji"],
+                n.supports = {
+                    everything: !0,
+                    everythingExceptFlag: !0
+                },
+                e = new Promise(function(e) {
+                    i.addEventListener("DOMContentLoaded", e, {
+                        once: !0
+                    })
+                }
+                ),
+                new Promise(function(t) {
+                    var n = function() {
+                        try {
+                            var e = JSON.parse(sessionStorage.getItem(o));
+                            if ("object" == typeof e && "number" == typeof e.timestamp && (new Date).valueOf() < e.timestamp + 604800 && "object" == typeof e.supportTests)
+                                return e.supportTests
+                        } catch (e) {}
+                        return null
+                    }();
+                    if (!n) {
+                        if ("undefined" != typeof Worker && "undefined" != typeof OffscreenCanvas && "undefined" != typeof URL && URL.createObjectURL && "undefined" != typeof Blob)
+                            try {
+                                var e = "postMessage(" + f.toString() + "(" + [JSON.stringify(s), u.toString(), p.toString()].join(",") + "));"
+                                  , r = new Blob([e],{
+                                    type: "text/javascript"
+                                })
+                                  , a = new Worker(URL.createObjectURL(r),{
+                                    name: "wpTestEmojiSupports"
+                                });
+                                return void (a.onmessage = function(e) {
+                                    c(n = e.data),
+                                    a.terminate(),
+                                    t(n)
+                                }
+                                )
+                            } catch (e) {}
+                        c(n = f(s, u, p))
+                    }
+                    t(n)
+                }
+                ).then(function(e) {
+                    for (var t in e)
+                        n.supports[t] = e[t],
+                        n.supports.everything = n.supports.everything && n.supports[t],
+                        "flag" !== t && (n.supports.everythingExceptFlag = n.supports.everythingExceptFlag && n.supports[t]);
+                    n.supports.everythingExceptFlag = n.supports.everythingExceptFlag && !n.supports.flag,
+                    n.DOMReady = !1,
+                    n.readyCallback = function() {
+                        n.DOMReady = !0
+                    }
+                }).then(function() {
+                    return e
+                }).then(function() {
+                    var e;
+                    n.supports.everything || (n.readyCallback(),
+                    (e = n.source || {}).concatemoji ? t(e.concatemoji) : e.wpemoji && e.twemoji && (t(e.twemoji),
+                    t(e.wpemoji)))
+                }))
+            }((window,
+            document), window._wpemojiSettings);
+            /* ]]> */
+        </script>
+        <style id='wp-emoji-styles-inline-css' type='text/css'>
+            img.wp-smiley, img.emoji {
+                display: inline !important;
+                border: none !important;
+                box-shadow: none !important;
+                height: 1em !important;
+                width: 1em !important;
+                margin: 0 0.07em !important;
+                vertical-align: -0.1em !important;
+                background: none !important;
+                padding: 0 !important;
+            }
+        </style>
+        <link rel='stylesheet' id='wp-block-library-css' href='https://portal.data.metro.tokyo.lg.jp/wp-includes/css/dist/block-library/style.min.css?ver=6.8' type='text/css' media='all'/>
+        <style id='classic-theme-styles-inline-css' type='text/css'>
+            /*! This file is auto-generated */
+            .wp-block-button__link {
+                color: #fff;
+                background-color: #32373c;
+                border-radius: 9999px;
+                box-shadow: none;
+                text-decoration: none;
+                padding: calc(.667em + 2px) calc(1.333em + 2px);
+                font-size: 1.125em
+            }
+
+            .wp-block-file__button {
+                background: #32373c;
+                color: #fff;
+                text-decoration: none
+            }
+        </style>
+        <style id='global-styles-inline-css' type='text/css'>
+            :root {
+                --wp--preset--aspect-ratio--square: 1;
+                --wp--preset--aspect-ratio--4-3: 4/3;
+                --wp--preset--aspect-ratio--3-4: 3/4;
+                --wp--preset--aspect-ratio--3-2: 3/2;
+                --wp--preset--aspect-ratio--2-3: 2/3;
+                --wp--preset--aspect-ratio--16-9: 16/9;
+                --wp--preset--aspect-ratio--9-16: 9/16;
+                --wp--preset--color--black: #000000;
+                --wp--preset--color--cyan-bluish-gray: #abb8c3;
+                --wp--preset--color--white: #ffffff;
+                --wp--preset--color--pale-pink: #f78da7;
+                --wp--preset--color--vivid-red: #cf2e2e;
+                --wp--preset--color--luminous-vivid-orange: #ff6900;
+                --wp--preset--color--luminous-vivid-amber: #fcb900;
+                --wp--preset--color--light-green-cyan: #7bdcb5;
+                --wp--preset--color--vivid-green-cyan: #00d084;
+                --wp--preset--color--pale-cyan-blue: #8ed1fc;
+                --wp--preset--color--vivid-cyan-blue: #0693e3;
+                --wp--preset--color--vivid-purple: #9b51e0;
+                --wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);
+                --wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);
+                --wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);
+                --wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);
+                --wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);
+                --wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);
+                --wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);
+                --wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);
+                --wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);
+                --wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);
+                --wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);
+                --wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);
+                --wp--preset--font-size--small: 13px;
+                --wp--preset--font-size--medium: 20px;
+                --wp--preset--font-size--large: 36px;
+                --wp--preset--font-size--x-large: 42px;
+                --wp--preset--spacing--20: 0.44rem;
+                --wp--preset--spacing--30: 0.67rem;
+                --wp--preset--spacing--40: 1rem;
+                --wp--preset--spacing--50: 1.5rem;
+                --wp--preset--spacing--60: 2.25rem;
+                --wp--preset--spacing--70: 3.38rem;
+                --wp--preset--spacing--80: 5.06rem;
+                --wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);
+                --wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);
+                --wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);
+                --wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);
+                --wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);
+            }
+
+            :where(.is-layout-flex) {
+                gap: 0.5em;
+            }
+
+            :where(.is-layout-grid) {
+                gap: 0.5em;
+            }
+
+            body .is-layout-flex {
+                display: flex;
+            }
+
+            .is-layout-flex {
                 flex-wrap: wrap;
-                justify-content: center;
+                align-items: center;
             }
 
-            .hero h2 {
-                font-size: 2rem;
+            .is-layout-flex > :is(*, div) {
+                margin: 0;
             }
 
-            .search-box {
-                flex-direction: column;
-                border-radius: 15px;
+            body .is-layout-grid {
+                display: grid;
             }
 
-            .search-btn {
-                border-radius: 0 0 15px 15px;
+            .is-layout-grid > :is(*, div) {
+                margin: 0;
             }
 
-            .main-content {
-                padding: 2rem 1rem;
+            :where(.wp-block-columns.is-layout-flex) {
+                gap: 2em;
             }
 
-            .stats-grid {
-                grid-template-columns: 1fr;
+            :where(.wp-block-columns.is-layout-grid) {
+                gap: 2em;
             }
-        }
 
-        /* アニメーション */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+            :where(.wp-block-post-template.is-layout-flex) {
+                gap: 1.25em;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
 
-        .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-    </style>
-</head>
-<body>
-    <!-- ヘッダー -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">📊</div>
-                <div class="logo-text">
-                    <h1>東京都オープンデータ</h1>
-                    <p>カタログサイト</p>
+            :where(.wp-block-post-template.is-layout-grid) {
+                gap: 1.25em;
+            }
+
+            .has-black-color {
+                color: var(--wp--preset--color--black) !important;
+            }
+
+            .has-cyan-bluish-gray-color {
+                color: var(--wp--preset--color--cyan-bluish-gray) !important;
+            }
+
+            .has-white-color {
+                color: var(--wp--preset--color--white) !important;
+            }
+
+            .has-pale-pink-color {
+                color: var(--wp--preset--color--pale-pink) !important;
+            }
+
+            .has-vivid-red-color {
+                color: var(--wp--preset--color--vivid-red) !important;
+            }
+
+            .has-luminous-vivid-orange-color {
+                color: var(--wp--preset--color--luminous-vivid-orange) !important;
+            }
+
+            .has-luminous-vivid-amber-color {
+                color: var(--wp--preset--color--luminous-vivid-amber) !important;
+            }
+
+            .has-light-green-cyan-color {
+                color: var(--wp--preset--color--light-green-cyan) !important;
+            }
+
+            .has-vivid-green-cyan-color {
+                color: var(--wp--preset--color--vivid-green-cyan) !important;
+            }
+
+            .has-pale-cyan-blue-color {
+                color: var(--wp--preset--color--pale-cyan-blue) !important;
+            }
+
+            .has-vivid-cyan-blue-color {
+                color: var(--wp--preset--color--vivid-cyan-blue) !important;
+            }
+
+            .has-vivid-purple-color {
+                color: var(--wp--preset--color--vivid-purple) !important;
+            }
+
+            .has-black-background-color {
+                background-color: var(--wp--preset--color--black) !important;
+            }
+
+            .has-cyan-bluish-gray-background-color {
+                background-color: var(--wp--preset--color--cyan-bluish-gray) !important;
+            }
+
+            .has-white-background-color {
+                background-color: var(--wp--preset--color--white) !important;
+            }
+
+            .has-pale-pink-background-color {
+                background-color: var(--wp--preset--color--pale-pink) !important;
+            }
+
+            .has-vivid-red-background-color {
+                background-color: var(--wp--preset--color--vivid-red) !important;
+            }
+
+            .has-luminous-vivid-orange-background-color {
+                background-color: var(--wp--preset--color--luminous-vivid-orange) !important;
+            }
+
+            .has-luminous-vivid-amber-background-color {
+                background-color: var(--wp--preset--color--luminous-vivid-amber) !important;
+            }
+
+            .has-light-green-cyan-background-color {
+                background-color: var(--wp--preset--color--light-green-cyan) !important;
+            }
+
+            .has-vivid-green-cyan-background-color {
+                background-color: var(--wp--preset--color--vivid-green-cyan) !important;
+            }
+
+            .has-pale-cyan-blue-background-color {
+                background-color: var(--wp--preset--color--pale-cyan-blue) !important;
+            }
+
+            .has-vivid-cyan-blue-background-color {
+                background-color: var(--wp--preset--color--vivid-cyan-blue) !important;
+            }
+
+            .has-vivid-purple-background-color {
+                background-color: var(--wp--preset--color--vivid-purple) !important;
+            }
+
+            .has-black-border-color {
+                border-color: var(--wp--preset--color--black) !important;
+            }
+
+            .has-cyan-bluish-gray-border-color {
+                border-color: var(--wp--preset--color--cyan-bluish-gray) !important;
+            }
+
+            .has-white-border-color {
+                border-color: var(--wp--preset--color--white) !important;
+            }
+
+            .has-pale-pink-border-color {
+                border-color: var(--wp--preset--color--pale-pink) !important;
+            }
+
+            .has-vivid-red-border-color {
+                border-color: var(--wp--preset--color--vivid-red) !important;
+            }
+
+            .has-luminous-vivid-orange-border-color {
+                border-color: var(--wp--preset--color--luminous-vivid-orange) !important;
+            }
+
+            .has-luminous-vivid-amber-border-color {
+                border-color: var(--wp--preset--color--luminous-vivid-amber) !important;
+            }
+
+            .has-light-green-cyan-border-color {
+                border-color: var(--wp--preset--color--light-green-cyan) !important;
+            }
+
+            .has-vivid-green-cyan-border-color {
+                border-color: var(--wp--preset--color--vivid-green-cyan) !important;
+            }
+
+            .has-pale-cyan-blue-border-color {
+                border-color: var(--wp--preset--color--pale-cyan-blue) !important;
+            }
+
+            .has-vivid-cyan-blue-border-color {
+                border-color: var(--wp--preset--color--vivid-cyan-blue) !important;
+            }
+
+            .has-vivid-purple-border-color {
+                border-color: var(--wp--preset--color--vivid-purple) !important;
+            }
+
+            .has-vivid-cyan-blue-to-vivid-purple-gradient-background {
+                background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;
+            }
+
+            .has-light-green-cyan-to-vivid-green-cyan-gradient-background {
+                background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;
+            }
+
+            .has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background {
+                background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;
+            }
+
+            .has-luminous-vivid-orange-to-vivid-red-gradient-background {
+                background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;
+            }
+
+            .has-very-light-gray-to-cyan-bluish-gray-gradient-background {
+                background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;
+            }
+
+            .has-cool-to-warm-spectrum-gradient-background {
+                background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;
+            }
+
+            .has-blush-light-purple-gradient-background {
+                background: var(--wp--preset--gradient--blush-light-purple) !important;
+            }
+
+            .has-blush-bordeaux-gradient-background {
+                background: var(--wp--preset--gradient--blush-bordeaux) !important;
+            }
+
+            .has-luminous-dusk-gradient-background {
+                background: var(--wp--preset--gradient--luminous-dusk) !important;
+            }
+
+            .has-pale-ocean-gradient-background {
+                background: var(--wp--preset--gradient--pale-ocean) !important;
+            }
+
+            .has-electric-grass-gradient-background {
+                background: var(--wp--preset--gradient--electric-grass) !important;
+            }
+
+            .has-midnight-gradient-background {
+                background: var(--wp--preset--gradient--midnight) !important;
+            }
+
+            .has-small-font-size {
+                font-size: var(--wp--preset--font-size--small) !important;
+            }
+
+            .has-medium-font-size {
+                font-size: var(--wp--preset--font-size--medium) !important;
+            }
+
+            .has-large-font-size {
+                font-size: var(--wp--preset--font-size--large) !important;
+            }
+
+            .has-x-large-font-size {
+                font-size: var(--wp--preset--font-size--x-large) !important;
+            }
+
+            :where(.wp-block-post-template.is-layout-flex) {
+                gap: 1.25em;
+            }
+
+            :where(.wp-block-post-template.is-layout-grid) {
+                gap: 1.25em;
+            }
+
+            :where(.wp-block-columns.is-layout-flex) {
+                gap: 2em;
+            }
+
+            :where(.wp-block-columns.is-layout-grid) {
+                gap: 2em;
+            }
+
+            :root :where(.wp-block-pullquote) {
+                font-size: 1.5em;
+                line-height: 1.6;
+            }
+        </style>
+        <link rel='stylesheet' id='aam8nyu.css-css' href='https://use.typekit.net/aam8nyu.css?ver=6.8' type='text/css' media='all'/>
+        <link rel='stylesheet' id='font.css-css' href='https://fonts.googleapis.com/css?family=Roboto%3A100&#038;ver=6.8' type='text/css' media='all'/>
+        <link rel='stylesheet' id='noto_sans-css' href='https://fonts.googleapis.com/css?family=Noto+Sans+JP&#038;display=swap&#038;ver=6.8' type='text/css' media='all'/>
+        <link rel='stylesheet' id='fontawesome.css-css' href='https://use.fontawesome.com/releases/v5.11.0/css/all.css?ver=6.8' type='text/css' media='all'/>
+        <link rel='stylesheet' id='jquery-ui.css-css' href='https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/css/jquery-ui.min.css?ver=1722920939' type='text/css' media='all'/>
+        <link rel='stylesheet' id='renewal-css' href='https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/css/renewal.css?ver=1743064967' type='text/css' media='all'/>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/js.cookie.js?ver=1692584659" id="js-cookie-js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js?ver=6.8" id="jquery-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/jquery-ui.min.js?ver=1722920939" id="jquery-ui-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/header-functions.js?ver=1722920939" id="header-functions.js-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/jquery.accessibility.js" id="jquery.accessibility.js-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/font-resizer.js?ver=6.8" id="fontresizer-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/search.js?ver=1648612693" id="search-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/modal.js?ver=1648612693" id="modal-js"></script>
+        <script type="text/javascript" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/js/survey.js?ver=1742199432" id="survey-js"></script>
+        <link rel="https://api.w.org/" href="https://portal.data.metro.tokyo.lg.jp/wp-json/"/>
+        <link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://portal.data.metro.tokyo.lg.jp/xmlrpc.php?rsd"/>
+        <meta name="generator" content="WordPress 6.8"/>
+        <style type="text/css">
+            .broken_link, a.broken_link {
+                text-decoration: line-through;
+            }
+        </style>
+    </head>
+    <body class="top ">
+        <!-- Google Tag Manager (noscript) -->
+        <noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NQW775C" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
+        <!-- End Google Tag Manager (noscript) -->
+        <div class="wrapper">
+            <header>
+                <div class="header__upper">
+                    <div class="header__upper__inner">
+                        <input class="header__nav-btn-check" type="checkbox" id="navBtn">
+                        <label class="header__nav-btn" for="navBtn">
+                            <span>開く</span>
+                        </label>
+                        <nav class="header__nav">
+                            <ul class="header__nav__list">
+                                <li class="header__nav__list__item">
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/news" title="お知らせ一覧ページに移動します">
+                                        <span class="main-visual-link-label">お知らせ
+                        </span>
+                                    </a>
+                                </li>
+                                <li class="header__nav__list__item">
+                                    <a href="https://catalog.data.metro.tokyo.lg.jp/dataset" target="_blank" title="データカタログのホームページを新規ウィンドウで開きます">
+                                        <span class="main-visual-link-label">一覧からデータを探す
+                        </span>
+                                    </a>
+                                </li>
+                                <li class="header__nav__list__item">
+                                    <a href="https://spec.api.metro.tokyo.lg.jp/spec/search" target="_blank" title="東京都オープンデータAPIサイトを新規ウィンドウで開きます">
+                                        <span class="main-visual-link-label">APIを探す
+                        </span>
+                                    </a>
+                                </li>
+                                <li class="header__nav__list__item">
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/case" title="活用事例一覧ページに移動します">
+                                        <span class="main-visual-link-label">データ活用事例を見る
+                        </span>
+                                    </a>
+                                </li>
+                                <li class="header__nav__list__item">
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/visualization" title="データで見る東京ページに移動します">
+                                        <span class="main-visual-link-label">データで見る東京
+                        </span>
+                                    </a>
+                                </li>
+                                <li class="header__nav__list__item">
+                                    <a target="new window" href="https://logoform.jp/form/tmgform/835554" title="リクエストボックスを新規ウィンドウで開きます">データをリクエストする
+                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <h1 class="header__site-logo">
+                            <a href="https://portal.data.metro.tokyo.lg.jp/" class="site-logo-link" title="東京都オープンデータカタログサイトホームページのトップページに移動します">
+                                <img class="logo-img" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/header_logo.png" alt="東京都オープンデータカタログサイトホームページ">
+                            </a>
+                        </h1>
+                    </div>
+                    <div class="header__upper__inner right">
+                        <nav class="header__right">
+                            <ul class="header__right-nav">
+                                <li class="header__right-nav__item header-right-nav-item-link search">
+                                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/header_glass.png" class="icon" alt="クリックするとテキスト入力欄が表示されます"/>
+                                    <button class="text">サイト内検索</button>
+                                    <form method="get" class="search__form" role="search" action="/">
+                                        <label for="keysearch">サイト内検索：</label>
+                                        <input value="" type="text" title="サイト内検索" placeholder="サイト内検索" name="s" id="keysearch" class="search__input"/>
+                                    </form>
+                                </li>
+                                <li id="UD" class="header__right-nav__item header-right-nav-item textsize_change">
+                                    <span>文字サイズ：</span>
+                                    <a href="" class="header-right-nav-item-link font-size small" title="Small">小</a>
+                                    <a href="" class="header-right-nav-item-link font-size normal active" title="Medium">中</a>
+                                    <a href="" class="header-right-nav-item-link font-size large" title="Large">大</a>
+                                </li>
+                                <li class="header__right-nav__item metro-tokyo">
+                                    <a href="https://www.metro.tokyo.lg.jp/" target="_blank" title="都庁総合トップを新規ウィンドウで開きます">都庁総合トップ
+                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
+                <div class="header__under">
+                    <nav class="header__under__inner">
+                        <ul class="header__under__list">
+                            <li class="item">
+                                <a class="highlight" href="https://catalog.data.metro.tokyo.lg.jp/dataset" target="_blank">一覧からデータを探す</a>
+                            </li>
+                            <li class="item">
+                                <a class="highlight" href="https://spec.api.metro.tokyo.lg.jp/spec/search" target="_blank">APIを探す</a>
+                            </li>
+                            <li class="item">
+                                <a class="highlight" href="https://portal.data.metro.tokyo.lg.jp/case" title="活用事例一覧ページに移動します">データ活用事例を見る</a>
+                            </li>
+                            <li class="item">
+                                <a class="highlight" href="https://portal.data.metro.tokyo.lg.jp/visualization" title="データで見る東京ページに移動します">データで見る東京</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </header>
+            <section class="main-visual">
+                <div class="main-visual__inner">
+                    <h1 class="main-visual__title">
+                        <img class="main-visual__image" src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/2022/img_hero_logo.png" srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/2022/img_hero_logo.png 1x,
+                        https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/2022/img_hero_logo@2x.png 2x,
+                        https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/2022/img_hero_logo@3x.png 3x" alt="東京都オープンデータカタログサイト">
+                    </h1>
+                    <div class="main-visual__button__outer">
+                        <button type="button" class="main-visual__button js-modal-open" data-modal="survey">オープンデータ利用に関するアンケートにご協力ください。</button>
+                    </div>
+                    <form method="get" class="main-visual__search" action="https://catalog.data.metro.tokyo.lg.jp/dataset">
+                        <div class="main-visual__search__inner">
+                            <input id="od-search" value="" type="text" placeholder="公開中のデータを検索する" name="q" class="main-visual__search__input" autocomplete="off"/>
+                            <button type="submit" class="main-visual__search__submit">データを探す
+                    </button>
+                        </div>
+                    </form>
+                    <div class="main-visual__description">
+                        <div class="main-visual__description__inner">
+                            <p class="main-visual__description__text">オープンデータは様々な用途で活用することができます。</p>
+                            <ul class="main-visual__description__text main-visual__description__list">
+                                <li>都や区市町村に関する様々な情報を調べる</li>
+                                <li>都政に関するデータを確認する</li>
+                                <li>アプリやサービス開発に活用する</li>
+                            </ul>
+                        </div>
+                        <ul class="main-visual__list">
+                            <li class="item">
+                                <a class="rounded" href="https://logoform.jp/form/tmgform/835554" target="_blank">データをリクエストする</a>
+                            </li>
+                            <li class="item">
+                                <a class="rounded gradient" href="https://portal.data.metro.tokyo.lg.jp/case" title="活用事例一覧ページに移動します">データを活用された方へ</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="modal-survey" class="modal">
+                    <button class="js-modal-close modal__close-button js-survey-close">×</button>
+                    <form id="survey-form" class="modal__inner" method="post">
+                        <h2 class="modal__title">オープンデータ利用に関するアンケート</h2>
+                        <div class="modal__lead__container">
+                            <p class="modal__lead__text">
+                                東京都オープンデータカタログサイト利用者のオープンデータに対するニーズを把握し、更なるオープンデータ化を促進するため、アンケートを実施します。<br>
+                                アンケートにご協力いただける方は、以下の設問にご回答ください。<br>収集した情報は、本サイトにおけるサービス向上、及び都ならびに都区市町村のオープンデータ化促進に使用されます。
+            
+                            </p>
+                            <p class="modal__lead__text">アンケートへの回答内容は、オープンデータとして公開されることがあります。公開する回答内容に個人を特定できる情報があった場合には加工した上で公開をします。ご理解とご協力をお願いいたします。
+            </p>
+                            <p class="modal__lead__text modal__lead__text--small">
+                                ※本アンケートは、Google Analyticsを利用して、Googleのプライバシーポリシーに基づいて実施されます。Google Analyticsの<a href="https://marketingplatform.google.com/about/analytics/terms/jp/" target="_blank" rel="noopenner noreferrer">利用規約</a>
+                                及び<a href="https://policies.google.com/privacy?hl=ja" target="_blank" rel="noopenner noreferrer">プライバシーポリシー</a>
+                                に関する説明については、Google Analyticsのサイトをご覧ください。<br>なお、Google Analyticsのサービス利用による損害については、東京都は責任を負わないものとします。
+            
+                            </p>
+                        </div>
+                        <dl class="modal-survey">
+                            <div class="modal-survey__item">
+                                <dt class="modal-survey__title">
+                                    <label for="q01">
+                                        職業/職種<strong>必須</strong>
+                                    </label>
+                                </dt>
+                                <dd class="modal-survey__content">
+                                    <select name="q01" id="q01" class="modal-select js-survey-trigger" required " data-index=" q01 "><option value="" checked>選択してください</option><option value=" 01 ">情報通信業</option><option value=" 02 ">製造業</option><option value=" 03 ">電気・ガス・熱供給・水道業</option><option value=" 04 ">建設業</option><option value=" 05 ">金融業・保険業</option><option value=" 06 ">卸売業・小売業</option><option value=" 07 ">学術・開発研究機関</option><option value=" 08 ">広告業</option><option value=" 09 ">運輸業・郵便業</option><option value=" 10 ">不動産業・物品賃貸業</option><option value=" 11 ">生活関連サービス業・娯楽業</option><option value=" 12 ">宿泊業・飲食サービス業</option><option value=" 13 ">その他サービス業</option><option value=" 14 ">医療・福祉</option><option value=" 15 ">教育・学習支援業</option><option value=" 16 ">鉱業・採石業・砂利採取業</option><option value=" 17 ">農業・林業</option><option value=" 18 ">漁業</option><option value=" 19 ">国家公務・地方公務</option><option value=" 20 ">自由業・フリーランス</option><option value=" 21 ">学生</option><option value=" 22 ">その他（自由回答）</option></select>
+                                            <textarea name=" q01_text " class=" modal-textarea js-survey-target " hidden=" hidden " maxlength=" 300 "></textarea>
+                                    </dd>
             </div>
-            <nav>
-                <ul class="nav-menu">
-                    <li><a href="#home">ホーム</a></li>
-                    <li><a href="#datasets">データセット</a></li>
-                    <li><a href="#visualization">可視化</a></li>
-                    <li><a href="#cases">活用事例</a></li>
-                    <li><a href="#about">サイトについて</a></li>
+                        <div class=" modal-survey__item ">
+                <dt class=" modal-survey__title ">
+                                            <label for=" q02 ">部署<strong>必須</strong></label>
+                                    </dt>
+                <dd class=" modal-survey__content ">
+                    <select name=" q02 " id=" q02 " class=" modal-select js-survey-trigger " required" data-index="q02">
+                                        <option value="" checked>選択してください</option>
+                                        <option value="01">企画開発部</option>
+                                        <option value="02">技術開発部・エンジニアリング部</option>
+                                        <option value="03">製品開発部・研究開発部</option>
+                                        <option value="04">デザイン部・クリエイティブ部</option>
+                                        <option value="05">サポート・カスタマーサービス部</option>
+                                        <option value="06">IT部・情報システム部</option>
+                                        <option value="07">ロジスティクス・物流部</option>
+                                        <option value="08">購買部・調達部</option>
+                                        <option value="09">経営・経営企画部</option>
+                                        <option value="10">営業部・セールス部</option>
+                                        <option value="11">マーケティング部</option>
+                                        <option value="12">人事・人材開発部</option>
+                                        <option value="13">総務・庶務部</option>
+                                        <option value="14">財務・会計部</option>
+                                        <option value="15">コンプライアンス・法務部</option>
+                                        <option value="16">その他（自由回答）</option>
+                                    </select>
+                                    <textarea name="q02_text" class="modal-textarea js-survey-target" hidden="hidden" maxlength="300"></textarea>
+                                </dd>
+                            </div>
+                            <div class="modal-survey__item" id="q03">
+                                <dt class="modal-survey__title">
+                                    オープンデータの使用目的（3つまで選択可）<strong>必須</strong>
+                                </dt>
+                                <dd class="modal-survey__content">
+                                    <ul class="modal-checkbox checkbox-group" data-index="q03">
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="01" class="js-survey-trigger">
+                                                <span>ソフトウェア・アプリケーションの開発</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="02" class="js-survey-trigger">
+                                                <span>商品・サービス開発</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="03" class="js-survey-trigger">
+                                                <span>その他商品開発</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="04" class="js-survey-trigger">
+                                                <span>研究</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="05" class="js-survey-trigger">
+                                                <span>戦略・政策策定</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="06" class="js-survey-trigger">
+                                                <span>データジャーナリズム・報道</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="07" class="js-survey-trigger">
+                                                <span>市民参画・市民活動</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="08" class="js-survey-trigger">
+                                                <span>教育・学習</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="09" class="js-survey-trigger">
+                                                <span>マーケティング</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="10" class="js-survey-trigger">
+                                                <span>改善活動・効率化</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q03" value="11" class="js-survey-trigger">
+                                                <span>その他（自由回答）</span>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                    <textarea name="q03_text" class="modal-textarea js-survey-target" hidden="hidden" maxlength="300"></textarea>
+                                </dd>
+                            </div>
+                            <div class="modal-survey__item" id="q04">
+                                <dt class="modal-survey__title">
+                                    関心のあるデータカテゴリ（3つまで選択可）<strong>必須</strong>
+                                </dt>
+                                <dd class="modal-survey__content">
+                                    <ul class="modal-checkbox checkbox-group" data-index="q04">
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="01" class="js-survey-trigger">
+                                                <span>国土・気象</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="02" class="js-survey-trigger">
+                                                <span>人口・世帯</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="03" class="js-survey-trigger">
+                                                <span>労働・賃金</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="04" class="js-survey-trigger">
+                                                <span>農林水産業</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="05" class="js-survey-trigger">
+                                                <span>鉱工業</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="06" class="js-survey-trigger">
+                                                <span>商業・サービス業</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="07" class="js-survey-trigger">
+                                                <span>企業・家計・経済</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="08" class="js-survey-trigger">
+                                                <span>住宅・土地・建設</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="09" class="js-survey-trigger">
+                                                <span>エネルギー・水</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="10" class="js-survey-trigger">
+                                                <span>運輸・観光</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="11" class="js-survey-trigger">
+                                                <span>情報通信・科学技術</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="12" class="js-survey-trigger">
+                                                <span>教育・文化・スポーツ・生活</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="13" class="js-survey-trigger">
+                                                <span>行財政</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="14" class="js-survey-trigger">
+                                                <span>司法・安全・環境</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="15" class="js-survey-trigger">
+                                                <span>社会保障・衛生</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="16" class="js-survey-trigger">
+                                                <span>国際</span>
+                                            </label>
+                                        </li>
+                                        <li class="modal-checkbox__item">
+                                            <label>
+                                                <input type="checkbox" name="q04" value="17" class="js-survey-trigger">
+                                                <span>その他（自由回答）</span>
+                                            </label>
+                                        </li>
+                                    </ul>
+                                    <textarea name="q04_text" class="modal-textarea js-survey-target" hidden="hidden" maxlength="300"></textarea>
+                                </dd>
+                            </div>
+                            <div class="modal-survey__item">
+                                <dt class="modal-survey__title">
+                                    <label for="q05">
+                                        利用状況/頻度<strong>必須</strong>
+                                    </label>
+                                </dt>
+                                <dd class="modal-survey__content"><select name="q05"id="q05"class="modal-select js-survey-trigger"required " data-index="q05 "><option value="" checked>選択してください</option><option value="01 ">毎日利用している</option><option value="02 ">週に数回利用している</option><option value="03 ">月に数回利用している</option><option value="04 ">数ヶ月に一度利用している</option><option value="05 ">年に数回利用している</option><option value="06 ">利用したことはあるが、頻度は低い</option><option value="07 ">これまで利用したことはないが、興味がある</option></select>
+                                    </dd>
+            </div>
+                        <div class="modal-survey__item " id="q06 ">
+                <dt class="modal-survey__title ">
+                      	                    オープンデータ利活用に関する情報収集の手段（3つまで選択可）<strong>必須</strong>                                    </dt>
+                <dd class="modal-survey__content ">
+                    <ul class="modal-checkbox checkbox-group " data-index="q06 "><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="01 " class="js-survey-trigger "><span>都のオープンデータポータルサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="02 " class="js-survey-trigger "><span>国や他自治体のオープンデータポータルサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="03 " class="js-survey-trigger "><span>都のウェブサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="04 " class="js-survey-trigger "><span>国・他県のウェブサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="05 " class="js-survey-trigger "><span>国際的なオープンデータ組織のウェブサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="06 " class="js-survey-trigger "><span>ソーシャルメディア</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="07 " class="js-survey-trigger "><span>オープンデータ関連のイベントやカンファレンス</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="08 " class="js-survey-trigger "><span>オープンデータに関するオンラインコミュニティやフォーラム</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="09 " class="js-survey-trigger "><span>オープンデータに関連する出版物や報告書</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="10 " class="js-survey-trigger "><span>学術論文や研究機関のウェブサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="11 " class="js-survey-trigger "><span>オープンデータに関連するニュースサイト</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q06 " value="12 " class="js-survey-trigger "><span>その他（自由回答）</span></label></li></ul>
+                                            <textarea name="q06_text " class="modal-textarea js-survey-target " hidden="hidden " maxlength="300 "></textarea>
+                                    </dd>
+            </div>
+                        <div class="modal-survey__item " id="q07 ">
+                <dt class="modal-survey__title ">
+                      	                    期待するオープンデータの形式（3つまで選択可）<strong>必須</strong>                                    </dt>
+                <dd class="modal-survey__content ">
+                    <ul class="modal-checkbox checkbox-group " data-index="q07 "><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="01 " class="js-survey-trigger "><span>CSV（カンマ区切り値）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="02 " class="js-survey-trigger "><span>Excel（XLSX）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="03 " class="js-survey-trigger "><span>JSON（JavaScript Object Notation）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="04 " class="js-survey-trigger "><span>XML（eXtensible Markup Language）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="05 " class="js-survey-trigger "><span>SQL（Structured Query Language）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="06 " class="js-survey-trigger "><span>API（Application Programming Interface）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="07 " class="js-survey-trigger "><span>GeoJSON（地理情報データ）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="08 " class="js-survey-trigger "><span>RDF（Resource Description Framework）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="09 " class="js-survey-trigger "><span>PDF（Portable Document Format）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="10 " class="js-survey-trigger "><span>TXT（テキスト）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q07 " value="11 " class="js-survey-trigger "><span>その他（自由回答）</span></label></li></ul>
+                                            <textarea name="q07_text " class="modal-textarea js-survey-target " hidden="hidden " maxlength="300 "></textarea>
+                                    </dd>
+            </div>
+                        <div class="modal-survey__item " id="q08 ">
+                <dt class="modal-survey__title ">
+                      	                    オープンデータ検索の際に必要だと思うデータに関する情報（3つまで選択可）<strong>必須</strong>                                    </dt>
+                <dd class="modal-survey__content ">
+                    <ul class="modal-checkbox checkbox-group " data-index="q08 "><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="01 " class="js-survey-trigger "><span>タイトル</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="02 " class="js-survey-trigger "><span>説明</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="03 " class="js-survey-trigger "><span>作成者/提供者</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="04 " class="js-survey-trigger "><span>作成日または最終更新日</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="05 " class="js-survey-trigger "><span>形式</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="06 " class="js-survey-trigger "><span>サイズ</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="07 " class="js-survey-trigger "><span>データのソースまたは参照元</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="08 " class="js-survey-trigger "><span>ライセンス情報</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="09 " class="js-survey-trigger "><span>カテゴリまたは分類</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="10 " class="js-survey-trigger "><span>キーワードやタグ</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="11 " class="js-survey-trigger "><span>データの地理的範囲（地理情報データの場合）</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="12 " class="js-survey-trigger "><span>関連データセットや関連資源</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q08 " value="13 " class="js-survey-trigger "><span>その他（自由回答）</span></label></li></ul>
+                                            <textarea name="q08_text " class="modal-textarea js-survey-target " hidden="hidden " maxlength="300 "></textarea>
+                                    </dd>
+            </div>
+                        <div class="modal-survey__item " id="q09 ">
+                <dt class="modal-survey__title ">
+                      	                    オープンデータ提供側への要望（3つまで選択可）<strong>必須</strong>                                    </dt>
+                <dd class="modal-survey__content ">
+                    <ul class="modal-checkbox checkbox-group " data-index="q09 "><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="01 " class="js-survey-trigger "><span>より詳細なデータを提供してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="02 " class="js-survey-trigger "><span>データの更新頻度を高めてほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="03 " class="js-survey-trigger "><span>データの範囲を拡大してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="04 " class="js-survey-trigger "><span>データの精度を向上してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="05 " class="js-survey-trigger "><span>データのフォーマットを統一してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="06 " class="js-survey-trigger "><span>データの利用例やチュートリアルを提供してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="07 " class="js-survey-trigger "><span>データの利用方法に関するサポートを提供してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="08 " class="js-survey-trigger "><span>オープンデータに関するイベントやワークショップを開催してほしい</span></label></li><li class="modal-checkbox__item "><label><input type="checkbox " name="q09 " value="09 " class="js-survey-trigger "><span>その他の要望（自由回答）</span></label></li></ul>
+                                            <textarea name="q09_text " class="modal-textarea js-survey-target " hidden="hidden " maxlength="300 "></textarea>
+                                    </dd>
+            </div>
+                    </dl>
+
+        <input type="hidden " name="uid " value="beea870c5e615d85d8557a7b40709e6f324983a4 " >
+        <div id="global-error-message " class="modal-survey__error "></div>
+
+        <div class="modal-button send ">
+            <button type="button " class="js-survey-submit ">送信</button>
+        </div>
+
+        <p class="modal-finish ">アンケートのご協力ありがとうございました！</p>
+
+        <div class="modal-button finish ">
+            <button type="button " class="js-modal-close ">閉じる</button>
+        </div>
+    </form>
+</div>
+    </section>
+    <div class="main-visual__banners ">
+        <div class="main-visual__banners__inner ">
+            <div class="main-visual__banners__link__wrapper "><a target="new window " href="https://odcommunity.metro.tokyo.lg.jp/">東京都オープンデータコミュニティ</a>
+            </div>
+            <div class="main-visual__banners__link__wrapper "><a target="new window " href="https://odhackathon.metro.tokyo.lg.jp/">都知事杯オープンデータ・ハッカソン</a>
+            </div>
+            <div class="main-visual__banners__link__wrapper "><a href="https://portal.data.metro.tokyo.lg.jp/report/round-table ">東京都オープンデータ・ラウンドテーブル</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="index_columns ">
+        <div class="index_columns__inner ">
+            <section id="news " class="news_section ">
+                <h2 class="news_section__title ">お知らせ</h2>
+                <div class="news_section__link ">
+                    <a href="https://portal.data.metro.tokyo.lg.jp/news ">お知らせ一覧を表示</a>
+                </div>
+                <ul class="news_section__list ">
+                                            <li>
+                                                    <a href="https://odhackathon.metro.tokyo.lg.jp/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat information ">お知らせ</span><span class="post_date ">2025/06/26</span>
+                                </div>
+                                <h3 class="title ">オープンデータを使って社会課題の解決を目指す「都知事杯オープンデータ・ハッカソン2025」の参加者募集を開始しました。エントリーは7月25日まで。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/proj-inclusive/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/05/30</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（支援みつもりヤドカリくん）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/report/round-table-20250205/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat information ">お知らせ</span><span class="post_date ">2025/03/05</span>
+                                </div>
+                                <h3 class="title ">第9回オープンデータ・ラウンドテーブルを開催しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/mesmapp/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/02/18</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（MeSM）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/municipal-open-data-map/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/02/10</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（自治体オープンデータマップ）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/secure-gis/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/02/10</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（セキュアGIS for 自治体）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/water-treatment-plant/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/02/10</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（東京都の浄水場別給水区域とキャッシュフロー）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/kumadoko/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2025/01/17</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（クマどこ）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/alhena/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2024/12/18</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（日暮里・舎人ライナー通勤シミュレーター）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                            <li>
+                                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/4689/" target="_blank ">
+                                <div class="title-sup ">
+                                    <span class="cat cat_case ">活用事例</span><span class="post_date ">2024/12/18</span>
+                                </div>
+                                <h3 class="title ">データ利活用事例（東京都地価格データビジュアライズ！〜より良い土地活用・開発を目指して〜）を追加しました。<i class="fas fa-external-link-alt "></i></h3>
+                            </a>
+                                                </li>
+                                    </ul>
+            </section>
+            <section id="ranking " class="ranking_section ">
+                <h2 class="ranking_section__title ">アクセスランキング</h2>
+                <p class="period ">集計期間：2025/07/14〜2025/07/20</p>
+                <ol class="ranking_section__list ">
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t134211d0000000001 " target="_blank ">
+                         <span class="subject strong ">東京デジタル2030ビジョン（こどもDX）子育て支援制度レジストリ</span>
+                         <p class="division ">【一般財団法人GovTech東京】東京デジタル2030ビジョンに基づく、こどもDXの東京都・基礎自治体の子育て支援制度に関するデータの一覧です。（随時更新）  
+
+※本レジストリに関するご意見は[**本Webフォーム**](https://forms.office.com/r/k5tZFY8um7)よりお願いいたします。  
+
+※項目「psid」の一部にUMナンバーを利用しています。UMナンバーの詳細は、[**UM普及協会が公開しているファイル**](https://showcase.universalmenu.org/download.html)を確認ください。  
+
+※現時点での子育て支援制度レジストリ整備状況等を暫定的にとりまとめました。  
+
+&emsp;[**〇 東京デジタル2030ビジョン（こどもDX）子育て支援制度レジストリダッシュボード**](https://app.powerbi.com/view?r=eyJrIjoiYTJjNzRiNjgtYTEyOS00YzMzLTgyNDYtNTFlZjE4ZTkzZTljIiwidCI6IjlkM2UyZTY5LWRmMmItNGM1My1iYWMxLWRkMDlmMDcyOGE3ZCJ9)  
+
+※子育て支援制度レジストリの活用例はこちらです。  
+
+&emsp;[**〇 東京都子育て支援制度レジストリ検索**](https://app.powerbi.com/view?r=eyJrIjoiMjNiZDQxZTktNTk2Yy00OTFhLTg4Y2YtMmY2NmQyZTI5NDE3IiwidCI6IjlkM2UyZTY5LWRmMmItNGM1My1iYWMxLWRkMDlmMDcyOGE3ZCJ9)
+</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000014d0000000029 " target="_blank ">
+                         <span class="subject strong ">浸水予想区域図</span>
+                         <p class="division ">【東京都建設局】東京都では、都民の皆様に大雨による水害の危険性をご理解頂き、事前の備えや避難に役立てていただくため、大雨が降った場合に浸水が予想される区域を表示した浸水予想区域図を作成しています。
+
+　浸水予想区域図は、東京都が管理する全河川（島しょ除く）を対象に、東京都を１４区域に分けて、
+
+
+
+　■大雨が降った際に危険な場所（浸水の予想される区域）
+
+　■危険の程度（想定される浸水深）
+
+
+
+を表示しています。
+
+　なお、浸水予想区域図では、川から水があふれることで浸水する現象（外水氾濫）と下水道管の能力を超えた雨水が窪地などにたまることで浸水する現象（内水氾濫）の両方を示しています。
+</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000008d2000000019 " target="_blank ">
+                         <span class="subject strong ">土地利用現況調査GISデータ</span>
+                         <p class="division ">【東京都都市整備局】　東京都における土地利用現況調査の結果をGISデータで作成したものです。</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000008d0000000028 " target="_blank ">
+                         <span class="subject strong ">都市計画決定情報GISデータ</span>
+                         <p class="division ">【東京都都市整備局】　東京都の都市計画情報をGISデータで作成したものです。
+
+データはシェープ形式となっています。 
+
+｢東京都縮尺1/2,500地形図｣をベースとして作成しています。 
+
+ 座標系は測地成果2011に基づく平面直角座標系第9系です。 
+</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t131032d0000000244 " target="_blank ">
+                         <span class="subject strong ">食品営業許可一覧</span>
+                         <p class="division ">食品営業許可の一覧です。</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000003d0000000093 " target="_blank ">
+                         <span class="subject strong ">東京都防災マップ 避難所・避難場所一覧データ</span>
+                         <p class="division ">【東京都総務局】東京都防災マップ( https://map.bosai.metro.tokyo.lg.jp/index.html )に掲載している避難所、避難場所の一覧です。なお、本情報は、原則として令和3年4月1日基準での情報です。
+
+
+
+
+
+データ利用に当たっては、東京都提供の「避難所、避難場所データ オープンデータ」を利用していることを表示してください。
+
+
+
+
+
+本データに関するお問い合わせについては、東京都総務局総合防災部防災計画課（電話：03-5388-2454）までお問い合わせください。
+
+
+
+
+
+<ライセンス＞
+
+本データはクリエイティブ・コモンズ・ライセンス表示 4.0 国際（https://creativecommons.org/licenses/by/4.0/legalcode.ja）の下に提供いたします。また、利用者がOpen Data CommonsによるODC BY（https://opendatacommons.org/licenses/by/1-0/）又はODbL（https://opendatacommons.org/licenses/odbl/）での利用を希望する場合に、それを妨げるものではありません。
+</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000017d0000000007 " target="_blank ">
+                         <span class="subject strong ">東京消防庁 消火栓及び防火水槽等</span>
+                         <p class="division ">東京消防庁マップ及び東京消防庁公式アプリの消防マップに掲載している東京消防庁管内の消火栓及び防火水槽等の位置情報です。(令和6年4月1日現在)　※表示された位置と実際の位置に多少の差異がある場合があります。</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000029d0000000024 " target="_blank ">
+                         <span class="subject strong ">東京都デジタルツイン実現プロジェクト　区部点群データ</span>
+                         <p class="division ">【東京都デジタルサービス局】航空レーザ測量により取得し、統合された16点/平方m以上の高密度点群データです。
+
+各ダウンロードページより、1/500図郭単位で、LAS等の各種形式をZIP圧縮したファイルのダウンロードができます。データの座標参照系は、日本測地系2011／平面直角座標系第9系です。
+
+
+
+〈注意〉
+
+1. ひとつのファイルの平均サイズが約200MBあります。最も大きなファイルは約400MBあります。ダウンロードに際しては、帯域によっては時間がかかること、保存先の空き容量にご注意ください。
+
+2. 本業務は0.25m及び0.5mのグリッドデータ作成の仕様となっております。
+
+3. 可能な限りのクリーニングはしていますが、データに外れ値が含まれていることをご了承ください。
+</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000004d2000000032 " target="_blank ">
+                         <span class="subject strong ">東京都工事設計単価表</span>
+                         <p class="division ">設計材料単価</p>
+                       </a>
+                    </li>
+                                        <li>
+                       <a href="https://catalog.data.metro.tokyo.lg.jp/dataset/t000029d0000000020 " target="_blank ">
+                         <span class="subject strong ">東京都デジタルツイン　多摩地域点群データ</span>
+                         <p class="division ">【東京都デジタルサービス局】陸部を航空レーザ測量、島しょ部の沿岸部を航空レーザ測深及びナローマルチビームにより、取得し統合された、16点/㎡以上の高密度点群データを利用しています。データの参照座標系は、日本測地系2011／平面直角座標Ⅸ系、標高＝東京湾平均海面です。計測機体：固定翼
+
+
+
+〈注意〉
+
+点群データは、１ファイルの最大サイズが１GB以上あるものもあります（平均約200MB）。ダウンロードに際しては、帯域によっては時間がかかることと、保存先の空き容量にご注意ください。
+
+データは、CC BY 4.0により利用可能です。
+</p>
+                       </a>
+                    </li>
+                                    </ol>
+            </section>
+            <section class="legend_section ">
+                <h2 class="legend_section__title ">データの凡例について</h2>
+                <ul class="legend_section__list ">
+                    <li>よく見られているデータ</li>
+                    <li>メンテナンス中</li>
                 </ul>
-            </nav>
+            </section>
         </div>
-    </header>
+    </div>
 
-    <!-- ヒーローセクション -->
-    <section class="hero">
-        <div class="hero-content">
-            <h2 class="animate-fade-in">東京のデータで未来を創ろう</h2>
-            <p class="animate-fade-in">東京都が提供するオープンデータを活用して、新たなサービスやアプリケーションを開発しませんか？7,000を超えるデータセットがあなたのアイデアを実現します。</p>
+    <section id="category " class="category_section ">
+        <div class="category_section__inner ">
+            <h2 class="category_section__title ">分野・カテゴリーからデータを探す</h2>
+            <div class="modal__open-button__wrap ">
+                <button type="button " class="js-modal-open " data-modal="category ">分野・カテゴリーの説明を見る</button>
+            </div>
+            <ul class="category_section__list ">
+                <li class="category_section__list__item disaster ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c001 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>避難所・避難場所などのデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_disaster.png "
+                                 class="image " alt="アイコン画像：防災・災害計画 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">防災・災害計画</span>
+                        </h2>
+                                                <p class="count ">
+                            249 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item security ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c002 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>犯罪発生情報などのデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_security.png "
+                                 class="image " alt="アイコン画像：治安 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">治安</span>
+                        </h2>
+                                                <p class="count ">
+                            65 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item town ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c003 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>都市計画などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_town.png "
+                                 class="image " alt="アイコン画像：まちづくり ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">まちづくり</span>
+                        </h2>
+                                                <p class="count ">
+                            436 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item population ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c004 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>人口・世帯、保育などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_population.png "
+                                 class="image " alt="アイコン画像：人口減少・少子高齢化 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="title__text ">人口減少</span>
+                            <span class="title-bottom ">少子高齢化</span>
+                        </h2>
+                                                <p class="count ">
+                            223 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item medical ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c005 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>社会福祉施設、AED設置場所などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_medical.png "
+                                 class="image " alt="アイコン画像：医療・福祉 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">医療・福祉</span>
+                        </h2>
+                                                <p class="count ">
+                            581 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item life ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c006 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>公共施設、バリアフリー対応トイレなどに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_life.png "
+                                 class="image " alt="アイコン画像：生活 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">生活</span>
+                        </h2>
+                                                <p class="count ">
+                            1691 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item tax ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c007 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>都財政、税などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_tax.png "
+                                 class="image " alt="アイコン画像：税金 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">税金</span>
+                        </h2>
+                                                <p class="count ">
+                            275 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item tourism ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c008 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>公衆無線LANアクセスポイントなどのデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_tourism.png "
+                                 class="image " alt="アイコン画像：観光 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">観光</span>
+                        </h2>
+                                                <p class="count ">
+                            101 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item olympic ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c009 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>スポーツ施設などのデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_olympic.png "
+                                 class="image " alt="オリンピック・パラリンピック ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">オリンピック</span>
+                            <span class="title-bottom ">パラリンピック</span>
+                        </h2>
+                                                <p class="count ">
+                            76 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item art ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c010 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>図書館、文化財一覧などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_art.png "
+                                 class="image " alt="芸術文化 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">芸術文化</span>
+                        </h2>
+                                                <p class="count ">
+                            187 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item industry ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c011 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>コロナウイルス感染症支援などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_industry.png "
+                                 class="image " alt="アイコン画像：産業雇用創出 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">産業雇用創出</span>
+                        </h2>
+                                                <p class="count ">
+                            436 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item enviroment ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c012 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>大気汚染モニタリング結果などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_enviroment.png "
+                                 class="image " alt="アイコン画像：環境 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">環境</span>
+                        </h2>
+                                                <p class="count ">
+                            456 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item traffic ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c013 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>鉄道、バスの位置情報などに関するデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_traffic.png "
+                                 class="image " alt="アイコン画像：交通情報 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">交通情報</span>
+                        </h2>
+                                                <p class="count ">
+                            128 </p>
+                    </a>
+                </li>
+                <li class="category_section__list__item other ">
+                    <div class="circle-bg "></div>
+                    <a href="https://catalog.data.metro.tokyo.lg.jp/group/c014 " class="link control-tooltip ">
+                        <div class="tooltip ">
+                          <p>各分野（カテゴリ）以外のデータ</p>
+                        </div>
+                        <div class="icon ">
+                            <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_other.png "
+                                 class="image " alt="アイコン画像：その他 ">
+                        </div>
+                        <h2 class="title ">
+                            <span class="text ">その他</span>
+                        </h2>
+                                                <p class="count ">
+                            2979                        </p>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+<div id="modal-category " class="modal ">
+    <button class="js-modal-close modal__close-button ">×</button>
+    <div class="modal__inner ">
+        <ul class="category_modal__list ">
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_disaster.png " class="image " alt="アイコン画像：防災・災害計画 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">防災・災害計画</span>
+                </h2>
+                <p class="description ">避難所・避難場所などのデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_security.png " class="image " alt="アイコン画像：治安 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">治安</span>
+                </h2>
+                <p class="description ">犯罪発生情報などのデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_town.png " class="image " alt="アイコン画像：まちづくり ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">まちづくり</span>
+                </h2>
+                <p class="description ">都市計画などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_population.png " class="image " alt="アイコン画像：人口減少・少子高齢化 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">人口減少・少子高齢化</span>
+                </h2>
+                <p class="description ">人口・世帯、保育などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_medical.png " class="image " alt="アイコン画像：医療・福祉 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">医療・福祉</span>
+                </h2>
+                <p class="description ">社会福祉施設、AED設置場所などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_life.png " class="image " alt="アイコン画像：生活 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">生活</span>
+                </h2>
+                <p class="description ">公共施設、バリアフリー対応トイレなどに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_tax.png " class="image " alt="アイコン画像：税金 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">税金</span>
+                </h2>
+                <p class="description ">都財政、税などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_tourism.png " class="image " alt="アイコン画像：観光 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">観光</span>
+                </h2>
+                <p class="description ">公衆無線LANアクセスポイントなどのデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_olympic.png " class="image " alt="アイコン画像：オリンピック・パラリンピック ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">オリンピック・パラリンピック</span>
+                </h2>
+                <p class="description ">スポーツ施設などのデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_art.png " class="image " alt="アイコン画像：芸術文化 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">芸術文化</span>
+                </h2>
+                <p class="description ">図書館、文化財一覧などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_industry.png " class="image " alt="アイコン画像：産業雇用創出 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">産業雇用創出</span>
+                </h2>
+                <p class="description ">コロナウイルス感染症支援などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_enviroment.png " class="image " alt="アイコン画像：環境 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">環境</span>
+                </h2>
+                <p class="description ">大気汚染モニタリング結果などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_traffic.png " class="image " alt="アイコン画像：交通情報 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">交通情報</span>
+                </h2>
+                <p class="description ">鉄道、バスの位置情報などに関するデータ</p>
+            </li>
+                        <li class="category_modal__item ">
+                <div class="icon ">
+                    <img src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/category_icon_other.png " class="image " alt="アイコン画像：その他 ">
+                </div>
+                <h2 class="title ">
+                    <span class="text ">その他</span>
+                </h2>
+                <p class="description ">各分野（カテゴリ）以外のデータ</p>
+            </li>
+                    </ul>
+    </div>
+</div>
+    </section>
+
+    <section class="example_section ">
+        <div class="example_section__inner ">
+            <h2 class="example_section__title ">オープンデータの利活用事例</h2>
+            <div class="example_section__link ">
+                <a href="https://portal.data.metro.tokyo.lg.jp/case ">すべての利活用事例を見る</a>
+            </div>
+            <div class="example_section__flex ">
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/proj-inclusive/">
+                        <article class="example_section__article ">
+                            <div class="img ">
+                                <img width="300 " height="169 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/05/proj-inclusive-300x169.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " fetchpriority="high " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/05/proj-inclusive-300x169.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/05/proj-inclusive-1024x576.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/05/proj-inclusive-768x432.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/05/proj-inclusive.webp 1280w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title ">支援みつもりヤドカリくん（proj-inclusive×一般社団法人防窮研究所）</h3>
+                            <p class="desc ">支援みつもりヤドカリくん 企業名 proj-inclusive×一般社団法人防窮研究所 サービス名称 支援みつもりヤドカリくん サービス概要 必要とする人が支援につながれるように、受給できる可能性が高い支援制度と受給金額...</p>
+                        </article>
+                    </a>
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/mesmapp/">
+                        <article class="example_section__article ">
+                            <div class="img ">
+                                <img width="300 " height="189 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-300x189.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-300x189.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-1024x645.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-768x484.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-1536x967.webp 1536w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/mesmapp-2048x1290.webp 2048w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title ">MeSM（金子 健作（大阪公立大学））</h3>
+                            <p class="desc ">MeSM 企業名 金子 健作（大阪公立大学） サービス名称 MeSM サービス概要 様々なオープンデータを活用し，地震災害リスクをWebサイト上で可視化する。3D都市モデルや多様な災害リスクを対話的かつ立体的に確認できる...</p>
+                        </article>
+                    </a>
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/case/municipal-open-data-map/">
+                        <article class="example_section__article ">
+                            <div class="img ">
+                                <img width="300 " height="212 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/municipal-open-data-map-300x212.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/municipal-open-data-map-300x212.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/municipal-open-data-map-1024x723.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/municipal-open-data-map-768x542.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/02/municipal-open-data-map.webp 1183w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title ">自治体オープンデータマップ（株式会社ネオ・ジーアイエス）</h3>
+                            <p class="desc ">自治体オープンデータマップ 企業名 株式会社ネオ・ジーアイエス サービス名称 自治体オープンデータマップ サービス概要 自治体（市区町村）が公開しているオープンデータを、ワンストップで地図（場所）から検索表示できる無償地...</p>
+                        </article>
+                    </a>
+                            </div>
         </div>
     </section>
 
-    <!-- 検索セクション -->
-    <section class="search-container">
-        <div class="search-wrapper">
-            <h3 style="text-align: center; margin-bottom: 2rem; color: #333; font-size: 1.5rem;">データを検索</h3>
-            <div class="search-box">
-                <input type="text" class="search-input" placeholder="キーワードを入力してデータを検索...">
-                <button class="search-btn">🔍 検索</button>
+    <section class="example_section ">
+        <div class="example_section__inner ">
+            <h2 class="example_section__title ">データで見る東京</h2>
+            <div class="example_section__link ">
+                <a href="https://portal.data.metro.tokyo.lg.jp/visualization ">すべてのダッシュボードを見る</a>
             </div>
+            <div class="example_section__flex ">
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/visualization/distribution-of-social-welfare-facilities/">
+                        <article class="example_section__article ">
+                            <div class="img img-tableau-thumbnail ">
+                                <img width="300 " height="170 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities-300x170.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities-300x170.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities-1024x581.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities-768x436.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities-1536x872.webp 1536w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/06/distribution-of-social-welfare-facilities.webp 1902w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title center ">東京都内の社会福祉施設等の分布</h3>
+                        </article>
+                    </a>
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/visualization/capacity-daycare-centers-children-waiting-lists/">
+                        <article class="example_section__article ">
+                            <div class="img img-tableau-thumbnail ">
+                                <img width="300 " height="154 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-300x154.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-300x154.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-1024x525.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-768x394.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-1536x787.webp 1536w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2022/08/capacity-daycare-centers-children-waiting-lists-2048x1050.webp 2048w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title center ">東京都の保育所定員数と待機児童数の推移</h3>
+                        </article>
+                    </a>
+                                    <a href="https://portal.data.metro.tokyo.lg.jp/visualization/childcare-support-system-registry/">
+                        <article class="example_section__article ">
+                            <div class="img img-tableau-thumbnail ">
+                                <img width="300 " height="171 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry-300x171.webp " class="attachment-medium size-medium wp-post-image " alt="" decoding="async " srcset="https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry-300x171.webp 300w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry-1024x585.webp 1024w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry-768x439.webp 768w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry-1536x877.webp 1536w,https://portal.data.metro.tokyo.lg.jp/wp-content/uploads/2025/03/childcare-support-system-registry.webp 1884w " sizes="(max-width:300px)100vw,300px " />                            </div>
+                            <h3 class="title center ">東京デジタル2030ビジョン（こどもDX）子育て支援制度レジストリ</h3>
+                        </article>
+                    </a>
+                            </div>
         </div>
     </section>
-
-    <!-- メインコンテンツ -->
-    <main class="main-content">
-        <!-- 統計情報 -->
-        <section class="section">
-            <h2 class="section-title">データ統計</h2>
-            <div class="stats-grid">
-                <div class="stat-card animate-fade-in">
-                    <div class="stat-number">7,821</div>
-                    <div class="stat-label">公開データセット</div>
-                </div>
-                <div class="stat-card animate-fade-in">
-                    <div class="stat-number">62</div>
-                    <div class="stat-label">参加自治体</div>
-                </div>
-                <div class="stat-card animate-fade-in">
-                    <div class="stat-number">14</div>
-                    <div class="stat-label">データカテゴリ</div>
-                </div>
-                <div class="stat-card animate-fade-in">
-                    <div class="stat-number">150+</div>
-                    <div class="stat-label">活用事例</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- データカテゴリ -->
-        <section class="section">
-            <h2 class="section-title">データカテゴリ</h2>
-            <div class="category-grid">
-                <div class="category-card">
-                    <div class="category-title">🚨 防災・安全</div>
-                    <div class="category-count">248</div>
-                    <div class="category-desc">避難所・避難場所、犯罪発生情報などの安全に関するデータ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">🏢 都市計画</div>
-                    <div class="category-count">423</div>
-                    <div class="category-desc">都市計画、土地利用、建築物などの都市開発に関するデータ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">👥 人口・福祉</div>
-                    <div class="category-count">753</div>
-                    <div class="category-desc">人口統計、社会福祉施設、保育園などの社会保障に関するデータ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">🏛️ 公共施設</div>
-                    <div class="category-count">1,709</div>
-                    <div class="category-desc">公共施設、バリアフリー対応トイレなどの公共インフラデータ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">💰 財政・税務</div>
-                    <div class="category-count">277</div>
-                    <div class="category-desc">都財政、税収、予算などの行政運営に関するデータ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">🌱 環境</div>
-                    <div class="category-count">477</div>
-                    <div class="category-desc">大気汚染モニタリング、環境測定などの環境保護データ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">🚇 交通</div>
-                    <div class="category-count">131</div>
-                    <div class="category-desc">鉄道、バスの運行情報、交通量などの交通関連データ</div>
-                </div>
-                <div class="category-card">
-                    <div class="category-title">📚 教育・文化</div>
-                    <div class="category-count">261</div>
-                    <div class="category-desc">図書館、文化財、スポーツ施設などの教育・文化施設データ</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 活用事例 -->
-        <section class="section">
-            <h2 class="section-title">活用事例</h2>
-            <div class="showcase-grid">
-                <div class="showcase-card">
-                    <div class="showcase-image">🗺️</div>
-                    <div class="showcase-content">
-                        <div class="showcase-title">MeSM - 地震災害リスク可視化</div>
-                        <div class="showcase-desc">様々なオープンデータを活用し、地震災害リスクをWebサイト上で可視化。3D都市モデルや多様な災害リスクを対話的かつ立体的に確認できるサービスです。</div>
-                    </div>
-                </div>
-                <div class="showcase-card">
-                    <div class="showcase-image">📍</div>
-                    <div class="showcase-content">
-                        <div class="showcase-title">自治体オープンデータマップ</div>
-                        <div class="showcase-desc">自治体（市区町村）が公開しているオープンデータを、ワンストップで地図（場所）から検索表示できる無償地図サービスです。</div>
-                    </div>
-                </div>
-                <div class="showcase-card">
-                    <div class="showcase-image">🚶‍♀️</div>
-                    <div class="showcase-content">
-                        <div class="showcase-title">TOKYO WALKING MAP</div>
-                        <div class="showcase-desc">東京の魅力を再発見しながら楽しんでウォーキングをしていただくための特設サイト。東京都のオープンデータを活用したウォーキングコース情報を提供しています。</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- フッター -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-grid">
-                <div class="footer-section">
-                    <h3>サイト情報</h3>
-                    <ul class="footer-links">
-                        <li><a href="#terms">利用規約</a></li>
-                        <li><a href="#privacy">プライバシーポリシー</a></li>
-                        <li><a href="#accessibility">アクセシビリティ方針</a></li>
-                        <li><a href="#sitemap">サイトマップ</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>データについて</h3>
-                    <ul class="footer-links">
-                        <li><a href="#api">オープンデータAPI</a></li>
-                        <li><a href="#license">ライセンス情報</a></li>
-                        <li><a href="#guidelines">データ公開ガイドライン</a></li>
-                        <li><a href="#update">更新情報</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>サポート</h3>
-                    <ul class="footer-links">
-                        <li><a href="#contact">お問い合わせ</a></li>
-                        <li><a href="#faq">よくある質問</a></li>
-                        <li><a href="#help">ヘルプ</a></li>
-                        <li><a href="#feedback">フィードバック</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>関連サイト</h3>
-                    <ul class="footer-links">
-                        <li><a href="#tokyo-gov">東京都公式サイト</a></li>
-                        <li><a href="#data-gov">政府統計ポータル</a></li>
-                        <li><a href="#local-gov">自治体サイト一覧</a></li>
-                        <li><a href="#opendata-jp">日本のオープンデータ</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 東京都. All rights reserved. | オープンデータの活用で、より良い社会を</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // 検索機能のシンプルな実装
-        document.querySelector('.search-btn').addEventListener('click', function() {
-            const searchTerm = document.querySelector('.search-input').value;
-            if (searchTerm.trim()) {
-                alert(`"${searchTerm}" で検索しています...`);
-                // 実際の検索機能はここに実装
-            }
-        });
-
-        // エンターキーでの検索
-        document.querySelector('.search-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.querySelector('.search-btn').click();
-            }
-        });
-
-        // カテゴリカードのクリック処理
-        document.querySelectorAll('.category-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const title = this.querySelector('.category-title').textContent;
-                alert(`${title} のデータを表示しています...`);
-                // 実際のページ遷移はここに実装
-            });
-        });
-
-        // スムーズスクロール
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
-
-        // アニメーション効果
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-fade-in');
-                }
-            });
-        }, observerOptions);
-
-        // 観察対象の要素を追加
-        document.querySelectorAll('.stat-card, .category-card, .showcase-card').forEach(el => {
-            observer.observe(el);
-        });
-    </script>
+<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/wp-*.php","\/wp-admin\/*","\/wp-content\/uploads\/*","\/wp-content\/*","\/wp-content\/plugins\/*","\/wp-content\/themes\/opendata\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch,.no-prefetch a"}}]},"eagerness":"conservative "}]}
+</script>
+<footer class="footer ">
+  <div class="footer__wrapper ">
+      <div class="footer__utility-list-wrapper ">
+        <ul class="footer__utility-list ">
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/terms " class="link ">利用規約</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/accessibility " class="link ">アクセシビリティ方針</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/contact " class="link ">お問い合わせ</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/opendata-api " class="link ">オープンデータAPIについて</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/report " class="link ">過去のイベント実績</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a target="new window "
+               href="https://opendatahandbook.org/glossary/ja/"
+               class="link ">用語集</a>
+          </li>
+          <li class="footer__utility-list__item ">
+            <a href="https://portal.data.metro.tokyo.lg.jp/staff-only " class="link ">行政職員向けポータルサイト</a>
+          </li>
+        </ul>
+      </div>
+    <div class="footer__logo__wrapper ">
+      <div class="footer__logo ">
+        <img width="268 " height="35 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/footer_logo.png " alt="ロゴ画像：東京都 "/>
+      </div>
+      <div class="footer__sub-logo ">
+        <a
+          target="new window "
+          href="https://www.kankyo.metro.tokyo.lg.jp/climate/tokyo_coolhome_coolbiz/index.html "
+          title="HTTのページを新規ウィンドウで開きます "
+        >
+          <img width="225 " height="92 " src="https://portal.data.metro.tokyo.lg.jp/wp-content/themes/opendata/images/htt_logo.jpg " alt="ロゴ画像：HTT "/>
+        </a>
+      </div>
+    </div>
+    <small class="footer__copyrights ">&copy; 2025 Tokyo Metropolitan Government.</small>
+    <a href="https://www.metro.tokyo.lg.jp/" class="footer__tocho-link ">都庁総合トップページ</a>
+  </div>
+</footer>
+</div>
 </body>
+</html>
