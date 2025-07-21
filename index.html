@@ -1,1 +1,671 @@
-\"<html><head><title>My HP</title></head><body><h1>Welcome to my HP!</h1></body></html>\" 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東京都オープンデータカタログサイト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        /* ヘッダー */
+        .header {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* ヒーローセクション */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23e3f2fd" width="1200" height="600"/><g opacity="0.1"><circle cx="200" cy="150" r="80" fill="%23333"/><circle cx="800" cy="350" r="60" fill="%23333"/><circle cx="1000" cy="200" r="100" fill="%23333"/></g></svg>');
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* 検索バー */
+        .search-container {
+            background: white;
+            padding: 3rem 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        }
+
+        .search-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            font-size: 1.1rem;
+            background: transparent;
+            outline: none;
+        }
+
+        .search-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #0052a3;
+            transform: scale(1.05);
+        }
+
+        /* メインコンテンツ */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section {
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #0066cc;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background: #0066cc;
+            border-radius: 2px;
+        }
+
+        /* 統計カード */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        /* カテゴリグリッド */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0066cc, #00a8ff);
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .category-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+
+        .category-desc {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* 活用事例セクション */
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .showcase-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .showcase-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .showcase-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #0066cc;
+        }
+
+        .showcase-content {
+            padding: 1.5rem;
+        }
+
+        .showcase-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .showcase-desc {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* フッター */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 3rem 0 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: #0066cc;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #34495e;
+            padding-top: 1rem;
+            text-align: center;
+            color: #95a5a6;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-menu {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero h2 {
+                font-size: 2rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+                border-radius: 15px;
+            }
+
+            .search-btn {
+                border-radius: 0 0 15px 15px;
+            }
+
+            .main-content {
+                padding: 2rem 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div class="logo-text">
+                    <h1>東京都オープンデータ</h1>
+                    <p>カタログサイト</p>
+                </div>
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#home">ホーム</a></li>
+                    <li><a href="#datasets">データセット</a></li>
+                    <li><a href="#visualization">可視化</a></li>
+                    <li><a href="#cases">活用事例</a></li>
+                    <li><a href="#about">サイトについて</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2 class="animate-fade-in">東京のデータで未来を創ろう</h2>
+            <p class="animate-fade-in">東京都が提供するオープンデータを活用して、新たなサービスやアプリケーションを開発しませんか？7,000を超えるデータセットがあなたのアイデアを実現します。</p>
+        </div>
+    </section>
+
+    <!-- 検索セクション -->
+    <section class="search-container">
+        <div class="search-wrapper">
+            <h3 style="text-align: center; margin-bottom: 2rem; color: #333; font-size: 1.5rem;">データを検索</h3>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="キーワードを入力してデータを検索...">
+                <button class="search-btn">🔍 検索</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- 統計情報 -->
+        <section class="section">
+            <h2 class="section-title">データ統計</h2>
+            <div class="stats-grid">
+                <div class="stat-card animate-fade-in">
+                    <div class="stat-number">7,821</div>
+                    <div class="stat-label">公開データセット</div>
+                </div>
+                <div class="stat-card animate-fade-in">
+                    <div class="stat-number">62</div>
+                    <div class="stat-label">参加自治体</div>
+                </div>
+                <div class="stat-card animate-fade-in">
+                    <div class="stat-number">14</div>
+                    <div class="stat-label">データカテゴリ</div>
+                </div>
+                <div class="stat-card animate-fade-in">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">活用事例</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- データカテゴリ -->
+        <section class="section">
+            <h2 class="section-title">データカテゴリ</h2>
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-title">🚨 防災・安全</div>
+                    <div class="category-count">248</div>
+                    <div class="category-desc">避難所・避難場所、犯罪発生情報などの安全に関するデータ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">🏢 都市計画</div>
+                    <div class="category-count">423</div>
+                    <div class="category-desc">都市計画、土地利用、建築物などの都市開発に関するデータ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">👥 人口・福祉</div>
+                    <div class="category-count">753</div>
+                    <div class="category-desc">人口統計、社会福祉施設、保育園などの社会保障に関するデータ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">🏛️ 公共施設</div>
+                    <div class="category-count">1,709</div>
+                    <div class="category-desc">公共施設、バリアフリー対応トイレなどの公共インフラデータ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">💰 財政・税務</div>
+                    <div class="category-count">277</div>
+                    <div class="category-desc">都財政、税収、予算などの行政運営に関するデータ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">🌱 環境</div>
+                    <div class="category-count">477</div>
+                    <div class="category-desc">大気汚染モニタリング、環境測定などの環境保護データ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">🚇 交通</div>
+                    <div class="category-count">131</div>
+                    <div class="category-desc">鉄道、バスの運行情報、交通量などの交通関連データ</div>
+                </div>
+                <div class="category-card">
+                    <div class="category-title">📚 教育・文化</div>
+                    <div class="category-count">261</div>
+                    <div class="category-desc">図書館、文化財、スポーツ施設などの教育・文化施設データ</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 活用事例 -->
+        <section class="section">
+            <h2 class="section-title">活用事例</h2>
+            <div class="showcase-grid">
+                <div class="showcase-card">
+                    <div class="showcase-image">🗺️</div>
+                    <div class="showcase-content">
+                        <div class="showcase-title">MeSM - 地震災害リスク可視化</div>
+                        <div class="showcase-desc">様々なオープンデータを活用し、地震災害リスクをWebサイト上で可視化。3D都市モデルや多様な災害リスクを対話的かつ立体的に確認できるサービスです。</div>
+                    </div>
+                </div>
+                <div class="showcase-card">
+                    <div class="showcase-image">📍</div>
+                    <div class="showcase-content">
+                        <div class="showcase-title">自治体オープンデータマップ</div>
+                        <div class="showcase-desc">自治体（市区町村）が公開しているオープンデータを、ワンストップで地図（場所）から検索表示できる無償地図サービスです。</div>
+                    </div>
+                </div>
+                <div class="showcase-card">
+                    <div class="showcase-image">🚶‍♀️</div>
+                    <div class="showcase-content">
+                        <div class="showcase-title">TOKYO WALKING MAP</div>
+                        <div class="showcase-desc">東京の魅力を再発見しながら楽しんでウォーキングをしていただくための特設サイト。東京都のオープンデータを活用したウォーキングコース情報を提供しています。</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>サイト情報</h3>
+                    <ul class="footer-links">
+                        <li><a href="#terms">利用規約</a></li>
+                        <li><a href="#privacy">プライバシーポリシー</a></li>
+                        <li><a href="#accessibility">アクセシビリティ方針</a></li>
+                        <li><a href="#sitemap">サイトマップ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>データについて</h3>
+                    <ul class="footer-links">
+                        <li><a href="#api">オープンデータAPI</a></li>
+                        <li><a href="#license">ライセンス情報</a></li>
+                        <li><a href="#guidelines">データ公開ガイドライン</a></li>
+                        <li><a href="#update">更新情報</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>サポート</h3>
+                    <ul class="footer-links">
+                        <li><a href="#contact">お問い合わせ</a></li>
+                        <li><a href="#faq">よくある質問</a></li>
+                        <li><a href="#help">ヘルプ</a></li>
+                        <li><a href="#feedback">フィードバック</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>関連サイト</h3>
+                    <ul class="footer-links">
+                        <li><a href="#tokyo-gov">東京都公式サイト</a></li>
+                        <li><a href="#data-gov">政府統計ポータル</a></li>
+                        <li><a href="#local-gov">自治体サイト一覧</a></li>
+                        <li><a href="#opendata-jp">日本のオープンデータ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 東京都. All rights reserved. | オープンデータの活用で、より良い社会を</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 検索機能のシンプルな実装
+        document.querySelector('.search-btn').addEventListener('click', function() {
+            const searchTerm = document.querySelector('.search-input').value;
+            if (searchTerm.trim()) {
+                alert(`"${searchTerm}" で検索しています...`);
+                // 実際の検索機能はここに実装
+            }
+        });
+
+        // エンターキーでの検索
+        document.querySelector('.search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('.search-btn').click();
+            }
+        });
+
+        // カテゴリカードのクリック処理
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const title = this.querySelector('.category-title').textContent;
+                alert(`${title} のデータを表示しています...`);
+                // 実際のページ遷移はここに実装
+            });
+        });
+
+        // スムーズスクロール
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // アニメーション効果
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in');
+                }
+            });
+        }, observerOptions);
+
+        // 観察対象の要素を追加
+        document.querySelectorAll('.stat-card, .category-card, .showcase-card').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
