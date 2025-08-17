@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Welfare Facility Manager
 
-## Getting Started
+## 1. 概要 (Overview)
 
-First, run the development server:
+このプロジェクトは、福祉施設の情報を管理するためのWebアプリケーションです。Next.js, Prisma, Tailwind CSSを使用して構築されています。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+This project is a web application for managing information about welfare facilities, built with Next.js, Prisma, and Tailwind CSS.
+
+## 2. 技術スタック (Technology Stack)
+
+- **Framework**: [Next.js](https://nextjs.org/) 15
+- **UI**: [React](https://react.dev/) 19
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Database**: SQLite
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+
+## 3. セットアップ手順 (Getting Started)
+
+### 前提条件 (Prerequisites)
+
+- [Node.js](https://nodejs.org/) (v18.17 or later)
+- [npm](https://www.npmjs.com/)
+
+### インストールと起動 (Installation and Execution)
+
+1.  **リポジトリをクローン (Clone the repository):**
+    ```bash
+    git clone <repository-url>
+    cd welfare-facility-manager
+    ```
+
+2.  **依存関係をインストール (Install dependencies):**
+    プロジェクトに必要なライブラリをインストールします。
+    ```bash
+    npm install
+    ```
+
+3.  **データベースをセットアップ (Set up the database):**
+    Prismaを使用して、SQLiteデータベースとテーブルを作成します。
+    ```bash
+    npx prisma migrate dev
+    ```
+    これにより `prisma/` ディレクトリ内に `dev.db` というデータベースファイルが生成されます。
+
+4.  **開発サーバーを起動 (Run the development server):**
+    ```bash
+    npm run dev
+    ```
+
+5.  **ブラウザで確認 (Open in browser):**
+    [http://localhost:3000](http://localhost:3000) をブラウザで開き、アプリケーションが動作していることを確認してください。
+
+## 4. 利用可能なスクリプト (Available Scripts)
+
+`package.json` には以下のスクリプトが定義されています。
+
+- `npm run dev`: 開発モードでアプリケーションを起動します。
+- `npm run build`: 本番環境用にアプリケーションをビルドします。
+- `npm run start`: ビルドされた本番用アプリケーションを起動します。
+- `npm run lint`: ESLintを実行し、コードの静的解析を行います。
+
+## 5. プロジェクト構成 (Project Structure)
+
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+.
+├── /app/           # アプリケーションのページとコンポーネント
+├── /prisma/        # Prismaスキーマとデータベースファイル
+│   ├── schema.prisma # データベースモデルの定義
+│   └── dev.db      # SQLiteデータベースファイル
+├── /public/        # 静的ファイル (画像など)
+├── package.json    # 依存関係とスクリプトの定義
+└── README.md       # このファイル
+```
