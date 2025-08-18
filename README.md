@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Care Connect
 
-## Getting Started
+## プロジェクト概要
 
-First, run the development server:
+「Care Connect」は、東京都内の障害福祉サービス事業所を検索し、詳細情報を閲覧できるWebアプリケーションです。利用者は、事業所名、地区、提供サービスの種類、空き状況などの条件で事業所を絞り込み検索できます。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 主な機能
+
+*   **事業所検索**: 事業所名、地区、提供サービス、空き状況による詳細な検索機能。
+*   **事業所情報表示**: 各事業所の詳細情報（説明、アピールポイント、提供サービス、連絡先、画像など）をカード形式で表示。
+*   **ユーザー認証**: Supabaseを利用したユーザー認証機能（ブックマーク、メッセージ機能など、今後の拡張を想定）。
+*   **API連携**: 検索結果は `/api/search/facilities` エンドポイントから取得。
+
+## 技術スタック
+
+*   **フレームワーク**: [Next.js](https://nextjs.org/) (React, TypeScript)
+*   **UI/UX**:
+    *   [Tailwind CSS](https://tailwindcss.com/): 高速なUI開発のためのユーティリティファーストCSSフレームワーク
+    *   [Framer Motion](https://www.framer.com/motion/): Reactのためのアニメーションライブラリ
+    *   [Lucide React](https://lucide.dev/): 軽量でカスタマイズ可能なアイコンセット
+    *   [react-hot-toast](https://react-hot-toast.com/): シンプルで美しい通知ライブラリ
+*   **バックエンド & データベース**: [Supabase](https://supabase.com/): オープンソースのFirebase代替（認証、データベース）
+*   **地図**: [Leaflet](https://leafletjs.com/) & [React-Leaflet](https://react-leaflet.js.org/): インタラクティブな地図表示
+*   **グラフ**: [Chart.js](https://www.chartjs.org/) & [React-Chartjs-2](https://react-chartjs-2.js.org/): データ可視化のためのグラフ描画
+*   **フォーム**: [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/): フォーム管理とスキーマバリデーション
+*   **その他**:
+    *   `@sendgrid/mail`: メール送信
+    *   `csv-parser`: CSVデータの解析
+
+## ディレクトリ構成
+
+```
+.
+├── components/             # UIコンポーネント
+│   ├── layout/             # 共通レイアウトコンポーネント
+│   ├── search/             # 検索関連のコンポーネント (FacilityCard, SearchResultsなど)
+│   └── ui/                 # 汎用的なUI要素 (Button, Card, Inputなど)
+├── lib/                    # ユーティリティ関数や外部サービス連携ロジック
+│   ├── hooks/              # カスタムReactフック
+│   ├── supabase/           # Supabaseクライアントの初期化と関連ロジック (client.ts, server.ts)
+│   └── utils/              # 汎用ユーティリティ (constants, helpers, validationなど)
+├── pages/                  # Next.jsのページコンポーネントとAPIルート
+│   ├── api/                # APIルート (例: search/facilities.ts)
+│   ├── auth/               # 認証関連ページ
+│   ├── _app.tsx            # アプリケーションのエントリーポイント
+│   ├── index.tsx           # メインの事業所検索ページ
+│   └── search-test.tsx     # 検索機能のテスト用ページ
+├── public/                 # 静的ファイル (画像など)
+├── styles/                 # グローバルスタイルやTailwind CSSの設定
+├── wamnet.csv              # 事業所データ（CSV形式）
+├── next.config.ts          # Next.jsの設定ファイル
+├── package.json            # プロジェクトの依存関係とスクリプト
+└── README.md               # このドキュメント
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## セットアップ方法
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1.  **リポジトリのクローン**:
+    ```bash
+    git clone https://github.com/your-username/care-connect.git
+    cd care-connect
+    ```
+    (注: `your-username` は実際のGitHubユーザー名または組織名に置き換えてください)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2.  **依存関係のインストール**:
+    ```bash
+    npm install
+    # または yarn install / pnpm install / bun install
+    ```
 
-## Learn More
+3.  **環境変数の設定**:
+    プロジェクトルートに `.env.local` ファイルを作成し、以下のSupabaseの環境変数を設定します。これらの値はあなたのSupabaseプロジェクトから取得してください。
+    NEXT_PUBLIC_SUPABASE_URL=https://imaefzapfboaanomiybg.supabase.co/
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYWVmemFwZmJvYWFub21peWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0MjI5NjksImV4cCI6MjA3MDk5ODk2OX0.iAfmdTYqy8fa9c8HKDAqbjYtBbfKBAfE8jfm3gj06Cg
+    SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYWVmemFwZmJvYWFub21peWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTQyMjk2OSwiZXhwIjoyMDcwOTk4OTY5fQ.1W7UmGKqPZzCk7SEckZC8C7o9mO3M4waICjDopDzl9M
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+4.  **開発サーバーの起動**:
+    ```bash
+    npm run dev
+    # または yarn dev / pnpm dev / bun dev
+    ```
+    ブラウザで `http://localhost:3000` を開くとアプリケーションが表示されます。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 各ファイルのコード概要
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### `pages/index.tsx`
 
-## Deploy on Vercel
+アプリケーションのメインページです。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+*   `SearchFilter` コンポーネントをレンダリングし、事業所名、地区、サービス、空き状況による検索フォームを提供します。
+*   検索条件に基づいて `/api/search/facilities` エンドポイントにAPIリクエストを送信し、検索結果を取得します。
+*   `SearchResults` コンポーネントを使用して、取得した事業所情報を表示します。
+*   初回アクセス時には、統計情報、提供サービスの一覧、アカウント作成を促すCTA（Call To Action）セクションが表示されます。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `pages/search-test.tsx`
+
+検索機能のテストを目的としたシンプルなページです。
+
+*   事業所名による検索入力フィールドと検索ボタンを提供します。
+*   `/api/search/facilities` エンドポイントを呼び出し、検索結果をJSON形式で表示します。開発中のデバッグやAPIの動作確認に利用されます。
+
+### `lib/supabase/client.ts`
+
+クライアントサイド（ブラウザ）でSupabaseクライアントを初期化するための設定ファイルです。
+
+*   `@supabase/auth-helpers-nextjs` の `createClientComponentClient` を使用して、Next.jsのクライアントコンポーネントからSupabaseにアクセスするためのクライアントインスタンスを作成しエクスポートします。
+
+### `lib/supabase/server.ts`
+
+サーバーサイド（Next.jsのAPIルートやサーバーコンポーネント）でSupabaseクライアントを初期化するための設定ファイルです。
+
+*   `@supabase/ssr` の `createServerClient` を使用し、サーバー環境からSupabaseに安全にアクセスするためのクライアントインスタンスを作成します。クッキーを介して認証情報を管理します。
+
+### `components/search/FacilityCard.tsx`
+
+個々の事業所情報を表示するための再利用可能なReactコンポーネントです。
+
+*   事業所の名前、地区、説明、アピールポイント、提供サービス、電話番号、ウェブサイト、画像などの情報を整形して表示します。
+*   `Link` コンポーネントを使用して、事業所の詳細ページへのナビゲーションを提供します。
+*   ブックマークやメッセージ送信などのアクションボタンも含まれています。
+*   内部で `Badge`, `Button`, `Card` といった汎用UIコンポーネントを使用しています。
+
+### `components/search/SearchSection.tsx`
+
+検索フォームとフィルターオプションを提供するコンポーネントです。
+
+*   `useSearch` カスタムフックを利用して検索ロジックを管理します。
+*   事業所名、地区、サービスカテゴリ、空き状況で絞り込みを行うための入力フィールドと選択肢を提供します。
+*   検索ボタンをクリックすると、親コンポーネントに検索結果を渡します。
+*   (注: `pages/index.tsx` では `SearchFilter` が使用されており、この `SearchSection` は `pages/search-test.tsx` で使用されているか、あるいは代替の実装として存在します。)
