@@ -1,54 +1,123 @@
-// components/search/SearchSection.tsx - ページネーション対応版
-import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, RotateCcw } from 'lucide-react';
+// components/search/SearchSection.tsx - 修正版（サービスID対応）
+import React, { useState, useEffect } from 'react';
 
-// 検索パラメータの型定義
-export interface SearchFilters {
+interface SearchFilters {
   query: string;
   district: string;
-  serviceIds: number[];
-  availabilityOnly: boolean;
-  page: number;
-  limit: number;
+  serviceIds: number[];  // 修正: カテゴリではなくサービスID配列
+  availabilityOnly: boolean;  // 修正: 名前を統一
 }
 
-// サービス情報の型定義
-interface ServiceOption {
+interface Service {
   id: number;
   name: string;
   category: string;
-  description: string;
 }
 
 interface SearchSectionProps {
-  filters: SearchFilters;
-  onFiltersChange: (filters: SearchFilters) => void;
-  loading?: boolean;
-  error?: string | null;
-  totalResults?: number;
-  availableServices?: ServiceOption[];
+  onSearchResults: (facilities: any[], loading: boolean, error: string | null, pagination?: any) => void;
 }
 
-const SearchSection: React.FC<SearchSectionProps> = ({
-  filters,
-  onFiltersChange,
-  loading = false,
-  error = null,
-  totalResults = 0,
-  availableServices = [],
-}) => {
-  // ローカル状態（入力中の値を保持）
-  const [localFilters, setLocalFilters] = useState<SearchFilters>(filters);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [selectedServices, setSelectedServices] = useState<number[]>(filters.serviceIds);
+const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
+  const [filters, setFilters] = useState<SearchFilters>({
+    query: '',
+    district: '',
+    serviceIds: [],
+    availabilityOnly: false,
+  });
 
-  // 外部からの filters 変更を反映
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // サービス一覧を取得
   useEffect(() => {
-    setLocalFilters(filters);
-    setSelectedServices(filters.serviceIds);
-  }, [filters]);
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/services');
+        if (response.ok) {
+          const servicesData = await response.json();
+          setServices(servicesData);
+        }
+      } catch (err) {
+        console.warn('サービス一覧の取得に失敗:', err);
+      }
+    };
 
-  // 東京都の区一覧
+    fetchServices();
+  }, []);
+
+  // カテゴリ別にサービスをグループ化
+  const servicesByCategory = services.reduce((acc, service) => {
+    if (!acc[service.category]) {
+      acc[service.category] = [];
+    }
+    acc[service.category].push(service);
+    return acc;
+  }, {} as Record<string, Service[]>);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('🔍 検索実行:', filters);
+
+      const queryParams = new URLSearchParams();
+      
+      if (filters.query.trim()) {
+        queryParams.set('query', filters.query.trim());
+      }
+      if (filters.district && filters.district !== 'すべての地区') {
+        queryParams.set('district', filters.district);
+      }
+      if (filters.serviceIds.length > 0) {
+        queryParams.set('service_ids', JSON.stringify(filters.serviceIds));
+      }
+      if (filters.availabilityOnly) {
+        queryParams.set('availability_only', 'true');
+      }
+      
+      queryParams.set('page', '1');
+      queryParams.set('limit', '50');
+
+      const apiUrl = `/api/search/facilities?${queryParams.toString()}`;
+      console.log('📡 API URL:', apiUrl);
+
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`検索に失敗しました (${response.status})`);
+      }
+
+      const data = await response.json();
+      console.log('✅ 検索結果:', data);
+
+      onSearchResults(data.facilities || [], false, null, data.pagination);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '検索中にエラーが発生しました';
+      console.error('❌ 検索エラー:', errorMessage);
+      setError(errorMessage);
+      onSearchResults([], false, errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof SearchFilters, value: string | boolean | number[]) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  // サービス選択の変更
+  const handleServiceToggle = (serviceId: number, checked: boolean) => {
+    const newServiceIds = checked
+      ? [...filters.serviceIds, serviceId]
+      : filters.serviceIds.filter(id => id !== serviceId);
+    
+    setFilters(prev => ({ ...prev, serviceIds: newServiceIds }));
+  };
+
   const districts = [
     '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区',
     '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区',
@@ -56,160 +125,54 @@ const SearchSection: React.FC<SearchSectionProps> = ({
     '葛飾区', '江戸川区'
   ];
 
-  // サービスカテゴリごとにグループ化
-  const servicesByCategory = availableServices.reduce((acc, service) => {
-    if (!acc[service.category]) {
-      acc[service.category] = [];
-    }
-    acc[service.category].push(service);
-    return acc;
-  }, {} as Record<string, ServiceOption[]>);
-
-  // 入力値変更ハンドラー
-  const handleInputChange = useCallback((field: keyof SearchFilters, value: any) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [field]: value,
-      page: field !== 'page' ? 1 : value, // ページ以外の変更時はページを1に戻す
-    }));
-  }, []);
-
-  // サービス選択変更ハンドラー
-  const handleServiceChange = useCallback((serviceId: number, checked: boolean) => {
-    const newSelectedServices = checked
-      ? [...selectedServices, serviceId]
-      : selectedServices.filter(id => id !== serviceId);
-    
-    setSelectedServices(newSelectedServices);
-    setLocalFilters(prev => ({
-      ...prev,
-      serviceIds: newSelectedServices,
-      page: 1, // サービス変更時はページを1に戻す
-    }));
-  }, [selectedServices]);
-
-  // 検索実行
-  const handleSearch = useCallback(() => {
-    onFiltersChange({
-      ...localFilters,
-      serviceIds: selectedServices,
-    });
-  }, [localFilters, selectedServices, onFiltersChange]);
-
-  // リセット
-  const handleReset = useCallback(() => {
-    const resetFilters: SearchFilters = {
-      query: '',
-      district: '',
-      serviceIds: [],
-      availabilityOnly: false,
-      page: 1,
-      limit: 20,
-    };
-    setLocalFilters(resetFilters);
-    setSelectedServices([]);
-    onFiltersChange(resetFilters);
-  }, [onFiltersChange]);
-
-  // Enterキーでの検索
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  }, [handleSearch]);
-
   return (
-    <div className="search-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      {/* メイン検索バー */}
+    <div className="search-section bg-white rounded-lg shadow-sm border p-6">
+      {/* メイン検索 */}
       <div className="main-search mb-6">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <input
               type="text"
               placeholder="事業所名で検索..."
-              value={localFilters.query}
+              value={filters.query}
               onChange={(e) => handleInputChange('query', e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={loading}
+              className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
-          
-          <button
+          <button 
             onClick={handleSearch}
             disabled={loading}
-            className={`px-6 py-3 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-              loading
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              loading 
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-green-500 text-white hover:bg-green-600'
             }`}
           >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>検索中...</span>
-              </div>
-            ) : (
-              '検索する'
-            )}
+            {loading ? '検索中...' : '検索する'}
           </button>
         </div>
-
-        {/* 検索結果サマリー */}
-        {totalResults > 0 && !loading && (
-          <div className="mt-3 text-sm text-gray-600">
-            <span className="font-medium text-green-600">{totalResults.toLocaleString()}件</span>
-            の事業所が見つかりました
-          </div>
-        )}
-
-        {/* エラー表示 */}
+        
         {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
             ❌ {error}
           </div>
         )}
       </div>
 
-      {/* 詳細フィルター */}
+      {/* フィルター */}
       <div className="filters-section">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            絞り込み検索
-          </h3>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="text-sm text-green-600 hover:text-green-700 transition-colors"
-            >
-              {showAdvancedFilters ? '簡易表示' : '詳細表示'}
-            </button>
-            <button
-              onClick={handleReset}
-              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <RotateCcw className="h-4 w-4 mr-1" />
-              リセット
-            </button>
-          </div>
-        </div>
-
-        {/* 基本フィルター */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <h3 className="text-lg font-semibold mb-4">絞り込み検索</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* 地区選択 */}
           <div className="filter-group">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              地区
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">地区</label>
             <select
-              value={localFilters.district}
+              value={filters.district}
               onChange={(e) => handleInputChange('district', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">すべての地区</option>
               {districts.map(district => (
@@ -218,67 +181,39 @@ const SearchSection: React.FC<SearchSectionProps> = ({
             </select>
           </div>
 
-          {/* 表示件数選択 */}
-          <div className="filter-group">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              表示件数
-            </label>
-            <select
-              value={localFilters.limit}
-              onChange={(e) => handleInputChange('limit', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={loading}
-            >
-              <option value={10}>10件</option>
-              <option value={20}>20件</option>
-              <option value={50}>50件</option>
-              <option value={100}>100件</option>
-            </select>
-          </div>
-
           {/* 空きありフィルター */}
           <div className="filter-group">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              空き状況
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
+            <label className="block text-sm font-medium text-gray-700 mb-2">空き状況</label>
+            <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={localFilters.availabilityOnly}
+                checked={filters.availabilityOnly}
                 onChange={(e) => handleInputChange('availabilityOnly', e.target.checked)}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                disabled={loading}
+                className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
               />
               <span className="text-sm text-gray-700">空きのある事業所のみ</span>
             </label>
           </div>
         </div>
 
-        {/* 詳細フィルター（サービス選択） */}
-        {showAdvancedFilters && (
-          <div className="advanced-filters border-t border-gray-200 pt-4">
-            <h4 className="text-md font-medium text-gray-900 mb-3">提供サービスで絞り込み</h4>
+        {/* サービス選択（修正版：サービスID使用） */}
+        {Object.keys(servicesByCategory).length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">提供サービス</h4>
             <div className="space-y-4">
-              {Object.entries(servicesByCategory).map(([category, services]) => (
-                <div key={category} className="service-category">
-                  <h5 className="text-sm font-medium text-gray-800 mb-2">{category}</h5>
+              {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+                <div key={category} className="border rounded-lg p-3">
+                  <h5 className="font-medium text-gray-800 mb-2">{category}</h5>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {services.map((service) => (
-                      <label
-                        key={service.id}
-                        className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-50"
-                        title={service.description}
-                      >
+                    {categoryServices.map((service) => (
+                      <label key={service.id} className="flex items-center text-sm">
                         <input
                           type="checkbox"
-                          checked={selectedServices.includes(service.id)}
-                          onChange={(e) => handleServiceChange(service.id, e.target.checked)}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                          disabled={loading}
+                          checked={filters.serviceIds.includes(service.id)}
+                          onChange={(e) => handleServiceToggle(service.id, e.target.checked)}
+                          className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                         />
-                        <span className="text-sm text-gray-700 truncate" title={service.description}>
-                          {service.name}
-                        </span>
+                        <span className="text-gray-700">{service.name}</span>
                       </label>
                     ))}
                   </div>
@@ -288,44 +223,42 @@ const SearchSection: React.FC<SearchSectionProps> = ({
           </div>
         )}
 
-        {/* 検索実行ボタン */}
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className={`px-8 py-3 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-              loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
-          >
-            {loading ? '検索中...' : '条件で検索'}
-          </button>
-        </div>
-
-        {/* 選択されたフィルターの表示 */}
-        {(localFilters.district || selectedServices.length > 0 || localFilters.availabilityOnly) && (
-          <div className="active-filters mt-4 p-3 bg-green-50 rounded-lg">
-            <div className="text-sm font-medium text-green-800 mb-2">適用中のフィルター:</div>
+        {/* 選択されたサービスの表示 */}
+        {filters.serviceIds.length > 0 && (
+          <div className="mb-4 p-3 bg-green-50 rounded-lg">
+            <div className="text-sm font-medium text-green-800 mb-2">
+              選択中のサービス ({filters.serviceIds.length}件):
+            </div>
             <div className="flex flex-wrap gap-2">
-              {localFilters.district && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  地区: {localFilters.district}
-                </span>
-              )}
-              {selectedServices.length > 0 && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  サービス: {selectedServices.length}件選択
-                </span>
-              )}
-              {localFilters.availabilityOnly && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  空きあり
-                </span>
-              )}
+              {filters.serviceIds.map(serviceId => {
+                const service = services.find(s => s.id === serviceId);
+                return service ? (
+                  <span key={serviceId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {service.name}
+                    <button
+                      onClick={() => handleServiceToggle(serviceId, false)}
+                      className="ml-1 text-green-600 hover:text-green-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ) : null;
+              })}
             </div>
           </div>
         )}
+
+        <button 
+          onClick={handleSearch}
+          disabled={loading}
+          className={`w-full py-3 rounded-lg font-medium transition-colors ${
+            loading 
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-green-500 text-white hover:bg-green-600'
+          }`}
+        >
+          {loading ? '検索中...' : '条件で検索'}
+        </button>
       </div>
     </div>
   );
