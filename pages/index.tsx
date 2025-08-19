@@ -1,6 +1,7 @@
 // pages/index.tsx - サービス検索機能拡張版
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 // 型定義
 interface Service {
@@ -646,7 +647,9 @@ const HomePage: React.FC = () => {
             </p>
             <div className="cta-buttons">
               <button className="cta-primary">利用者として登録</button>
-              <button className="cta-secondary">事業所として登録</button>
+              <Link href="/register" passHref legacyBehavior>
+                <a className="cta-secondary">事業所として登録</a>
+              </Link>
             </div>
           </section>
         )}
