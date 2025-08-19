@@ -1,4 +1,4 @@
-// pages/api/search/facilities.ts - サービス検索対応修正版
+// pages/api/search/facilities.ts - 地区検索修正版
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,7 +9,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Supabase クライアント初期化
 const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '');
 
-// 簡単な型定義
 interface SearchResponse {
   facilities: any[];
   pagination: {
@@ -18,6 +17,7 @@ interface SearchResponse {
     total: number;
     pages: number;
   };
+  debug?: any; // デバッグ用情報
 }
 
 interface ErrorResponse {
@@ -28,12 +28,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SearchResponse | ErrorResponse>
 ) {
-  // メソッドチェック
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 環境変数チェック
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Supabase環境変数が設定されていません');
     return res.status(500).json({ error: 'Server configuration error' });
@@ -53,35 +51,35 @@ export default async function handler(
     // パラメータの変換
     const searchQuery = Array.isArray(query) ? query[0] : query;
     const searchDistrict = Array.isArray(district) ? district[0] : district;
-    const searchAvailabilityOnly = Array.isArray(availability_only) 
-      ? availability_only[0] === 'true' 
-      : availability_only === 'true';
+    
+    // 修正: availability_only の型安全な変換
+    const availabilityOnlyValue = Array.isArray(availability_only) 
+      ? availability_only[0] 
+      : availability_only;
+    const searchAvailabilityOnly = availabilityOnlyValue === 'true';
+    
     const pageNum = parseInt(Array.isArray(page) ? page[0] : page, 10) || 1;
     const limitNum = parseInt(Array.isArray(limit) ? limit[0] : limit, 10) || 20;
     const offset = (pageNum - 1) * limitNum;
 
-    // service_ids の処理（デバッグログ追加）
+    // service_ids の処理
     let serviceIds: number[] = [];
     if (service_ids) {
       try {
         const serviceIdsStr = Array.isArray(service_ids) ? service_ids[0] : service_ids;
-        console.log('service_ids 受信:', serviceIdsStr);
-        serviceIds = JSON.parse(serviceIdsStr);
-        console.log('service_ids パース結果:', serviceIds);
+        if (serviceIdsStr && serviceIdsStr !== '') {
+          serviceIds = JSON.parse(serviceIdsStr);
+        }
       } catch (e) {
         console.warn('service_ids パースエラー:', service_ids, e);
       }
     }
 
-    console.log('=== 検索API デバッグ情報 ===');
-    console.log('検索パラメータ:', { 
-      searchQuery, 
-      searchDistrict, 
-      serviceIds, 
-      searchAvailabilityOnly, 
-      pageNum, 
-      limitNum 
-    });
+    console.log('=== 検索パラメータ ===');
+    console.log('searchQuery:', searchQuery);
+    console.log('searchDistrict:', searchDistrict);
+    console.log('serviceIds:', serviceIds);
+    console.log('searchAvailabilityOnly:', searchAvailabilityOnly);
 
     // 基本クエリの構築
     let facilitiesQuery = supabase
@@ -114,71 +112,72 @@ export default async function handler(
       `)
       .eq('is_active', true);
 
-    // 検索条件の追加
+    // 検索条件の追加（修正版）
     if (searchQuery && searchQuery.trim() !== '') {
       facilitiesQuery = facilitiesQuery.ilike('name', `%${searchQuery.trim()}%`);
-      console.log('事業所名検索追加:', searchQuery);
+      console.log('✅ 事業所名フィルター追加:', searchQuery);
     }
 
-    if (searchDistrict && searchDistrict.trim() !== '') {
+    // 地区フィルター - 空文字列の場合はフィルターを適用しない
+    if (searchDistrict && searchDistrict.trim() !== '' && searchDistrict !== 'すべての地区') {
       facilitiesQuery = facilitiesQuery.eq('district', searchDistrict.trim());
-      console.log('地区検索追加:', searchDistrict);
+      console.log('✅ 地区フィルター追加:', searchDistrict);
+    } else {
+      console.log('✅ 地区フィルターなし（全地区対象）');
     }
 
-    // ページネーションと並び順
-    facilitiesQuery = facilitiesQuery
-      .range(offset, offset + limitNum - 1)
-      .order('updated_at', { ascending: false });
+    console.log('データベースクエリ実行中...');
 
     // データ取得
-    console.log('Supabase クエリ実行中...');
-    const { data, error: facilitiesError } = await facilitiesQuery;
+    const { data: rawFacilities, error: facilitiesError } = await facilitiesQuery;
 
     if (facilitiesError) {
-      console.error('Supabase 事業所取得エラー:', facilitiesError);
+      console.error('❌ Supabase エラー:', facilitiesError);
       throw new Error(`事業所データの取得に失敗しました: ${facilitiesError.message}`);
     }
 
-    console.log('Supabase から取得した事業所数:', data?.length || 0);
+    console.log('✅ Supabase から取得:', rawFacilities?.length || 0, '件');
 
-    let filteredFacilities = data || [];
+    let filteredFacilities = rawFacilities || [];
 
-    // サービスIDでフィルタリング（後処理）
+    // サービスIDでフィルタリング
     if (serviceIds && serviceIds.length > 0) {
-      console.log('サービスIDフィルタリング開始:', serviceIds);
+      console.log('🔍 サービスIDフィルタリング開始:', serviceIds);
       
-      const beforeFilter = filteredFacilities.length;
+      const beforeCount = filteredFacilities.length;
       filteredFacilities = filteredFacilities.filter(facility => {
-        const hasMatchingService = facility.facility_services?.some((fs: any) => {
-          const serviceId = fs.service_id || fs.services?.id;
-          const matches = serviceIds.includes(serviceId);
-          if (matches) {
-            console.log(`マッチしたサービス: 事業所${facility.name} - サービスID${serviceId}`);
-          }
-          return matches;
+        const hasService = facility.facility_services?.some((fs: any) => {
+          const serviceId = fs.service_id;
+          return serviceIds.includes(serviceId);
         });
-        return hasMatchingService;
+        
+        if (hasService) {
+          console.log(`  ✅ マッチ: ${facility.name}`);
+        }
+        return hasService;
       });
       
-      console.log(`サービスフィルタリング結果: ${beforeFilter} → ${filteredFacilities.length}`);
+      console.log(`🔍 サービスフィルター結果: ${beforeCount} → ${filteredFacilities.length}`);
     }
 
-    // 空きありのみフィルター
+    // 空きありフィルター
     if (searchAvailabilityOnly) {
-      console.log('空きありフィルタリング開始');
+      console.log('🔍 空きありフィルタリング開始');
       
-      const beforeAvailabilityFilter = filteredFacilities.length;
+      const beforeCount = filteredFacilities.length;
       filteredFacilities = filteredFacilities.filter(facility =>
-        facility.facility_services?.some((fs: any) =>
-          fs.availability === 'available'
-        )
+        facility.facility_services?.some((fs: any) => fs.availability === 'available')
       );
       
-      console.log(`空きありフィルタリング結果: ${beforeAvailabilityFilter} → ${filteredFacilities.length}`);
+      console.log(`🔍 空きありフィルター結果: ${beforeCount} → ${filteredFacilities.length}`);
     }
 
-    // データを整形（servicesという名前に変更）
-    const transformedFacilities = filteredFacilities.map((facility: any) => ({
+    // ページネーション適用
+    const totalCount = filteredFacilities.length;
+    const paginatedFacilities = filteredFacilities.slice(offset, offset + limitNum);
+
+    // データ整形
+    const transformedFacilities = paginatedFacilities.map((facility: any) => ({
       ...facility,
       services: facility.facility_services?.map((fs: any) => ({
         id: fs.id,
@@ -189,12 +188,8 @@ export default async function handler(
       })) || [],
     }));
 
-    console.log(`最終検索結果: ${transformedFacilities.length} 件`);
+    console.log('✅ 最終結果:', transformedFacilities.length, '件（ページング後）');
 
-    // 総数取得のクエリ（簡略化）
-    const totalCount = transformedFacilities.length; // 簡易実装
-
-    // レスポンス作成
     const response: SearchResponse = {
       facilities: transformedFacilities,
       pagination: {
@@ -203,15 +198,27 @@ export default async function handler(
         total: totalCount,
         pages: Math.ceil(totalCount / limitNum),
       },
+      // デバッグ情報（開発環境のみ）
+      ...(process.env.NODE_ENV === 'development' && {
+        debug: {
+          rawCount: rawFacilities?.length || 0,
+          afterServiceFilter: serviceIds.length > 0 ? filteredFacilities.length : 'スキップ',
+          afterAvailabilityFilter: searchAvailabilityOnly ? filteredFacilities.length : 'スキップ',
+          totalCount,
+          searchParams: {
+            searchQuery,
+            searchDistrict,
+            serviceIds,
+            searchAvailabilityOnly
+          }
+        }
+      })
     };
-
-    console.log('=== API レスポンス ===');
-    console.log('返送する事業所数:', response.facilities.length);
 
     res.status(200).json(response);
 
   } catch (error) {
-    console.error('検索API エラー:', error);
+    console.error('❌ 検索API エラー:', error);
     
     const errorMessage = error instanceof Error 
       ? error.message 
