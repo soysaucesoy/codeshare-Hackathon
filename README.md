@@ -129,3 +129,11 @@
 *   事業所名、地区、サービスカテゴリ、空き状況で絞り込みを行うための入力フィールドと選択肢を提供します。
 *   検索ボタンをクリックすると、親コンポーネントに検索結果を渡します。
 *   (注: `pages/index.tsx` では `SearchFilter` が使用されており、この `SearchSection` は `pages/search-test.tsx` で使用されているか、あるいは代替の実装として存在します。)
+
+
+注意：管理者画面のログインは、supabaseでadduserして、sqlediterで
+UPDATE auth.users 
+SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb
+WHERE email = 'aih19567@gmail.com';
+
+してメルアドを管理者に設定してから、http://localhost:3000/admin/login へ
