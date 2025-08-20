@@ -688,9 +688,6 @@ const HomePage: React.FC = () => {
     setHasSearched(true);
     setLastSearchFilters(filters);
     await executeSearch(filters, 1);
-    
-    // 検索後は上部にスクロール
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // ページ変更時
