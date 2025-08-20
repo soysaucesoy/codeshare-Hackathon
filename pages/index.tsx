@@ -1,7 +1,20 @@
-// pages/index.tsx - サービス検索機能拡張版
+// pages/index.tsx - サービス検索機能拡張版（地図機能追加）
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import ToggleSwitch from '../components/ui/ToggleSwitch';
+
+// 地図コンポーネントを動的インポート（SSR対応）
+const MapView = dynamic(() => import('../components/search/MapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="map-loading">
+      <div className="loading-spinner">⏳</div>
+      <p>地図を読み込み中...</p>
+    </div>
+  )
+});
 
 // 型定義
 interface Service {
@@ -550,15 +563,18 @@ const Pagination: React.FC<{
   );
 };
 
-// 検索結果表示（ページネーション対応版）
+// 検索結果表示（地図表示対応版）
 const SearchResults: React.FC<{
   facilities: Facility[];
   pagination: SearchResponse['pagination'] | null;
   loading: boolean;
   error: string | null;
   onPageChange: (page: number) => void;
-}> = ({ facilities, pagination, loading, error, onPageChange }) => {
-  if (loading) {
+  viewMode: 'list' | 'map';
+  onViewModeChange: (mode: 'list' | 'map') => void;
+}> = ({ facilities, pagination, loading, error, onPageChange, viewMode, onViewModeChange }) => {
+  // リストビューの場合のみloading判定を適用
+  if (loading && viewMode === 'list') {
     return (
       <div className="loading-container">
         <div className="loading-spinner">⏳</div>
@@ -583,7 +599,8 @@ const SearchResults: React.FC<{
     );
   }
 
-  if (facilities.length === 0) {
+  // 検索完了後に結果が0件の場合の表示（リストビューのみ）
+  if (facilities.length === 0 && !loading && viewMode === 'list') {
     return (
       <div className="no-results">
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
@@ -595,25 +612,65 @@ const SearchResults: React.FC<{
 
   return (
     <div className="search-results">
-      <div className="results-header">
-        <h2 className="results-title">
-          検索結果 ({pagination?.total || facilities.length}件)
-        </h2>
-      </div>
-      
-      <div className="facilities-grid">
-        {facilities.map((facility) => (
-          <FacilityCard key={facility.id} facility={facility} />
-        ))}
+      {/* 検索結果ヘッダーとビュー切替 */}
+      <div className="view-toggle-container">
+        <div className="results-header-with-toggle">
+          <div className="results-title-container">
+            <h2 className="results-title">
+              検索結果 ({pagination?.total || facilities.length}件)
+            </h2>
+          </div>
+          <div className="toggle-container">
+            <ToggleSwitch
+              checked={viewMode === 'map'}
+              onChange={(checked) => onViewModeChange(checked ? 'map' : 'list')}
+              leftLabel="リスト表示"
+              rightLabel="地図表示"
+              leftIcon="📋"
+              rightIcon="🗺️"
+              disabled={loading}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* ページネーション */}
-      {pagination && (
-        <Pagination 
-          pagination={pagination} 
-          onPageChange={onPageChange} 
-          loading={loading}
-        />
+      {/* 表示内容 */}
+      {viewMode === 'map' ? (
+        <MapView facilities={facilities} loading={loading} />
+      ) : (
+        <>
+          {loading && (
+            <div className="loading-container">
+              <div className="loading-spinner">⏳</div>
+              <p>検索中...</p>
+            </div>
+          )}
+          
+          {!loading && facilities.length === 0 && (
+            <div className="no-results">
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+              <h3>検索結果がありません</h3>
+              <p className="no-results-sub">検索条件を変更して再度お試しください。</p>
+            </div>
+          )}
+
+          {!loading && facilities.length > 0 && (
+            <div className="facilities-grid">
+              {facilities.map((facility) => (
+                <FacilityCard key={facility.id} facility={facility} />
+              ))}
+            </div>
+          )}
+
+          {/* ページネーション（リスト表示時のみ） */}
+          {pagination && !loading && (
+            <Pagination 
+              pagination={pagination} 
+              onPageChange={onPageChange} 
+              loading={loading}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -626,6 +683,7 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [lastSearchFilters, setLastSearchFilters] = useState<{
     query: string; 
     district: string; 
@@ -641,12 +699,14 @@ const HomePage: React.FC = () => {
       serviceIds: number[];
       availabilityOnly: boolean 
     }, 
-    page: number = 1
+    page: number = 1,
+    forceViewMode?: 'list' | 'map'
   ) => {
     try {
       setLoading(true);
       setError(null);
 
+      const currentViewMode = forceViewMode || viewMode;
       const params = new URLSearchParams();
       if (filters.query) params.append('query', filters.query);
       if (filters.district) params.append('district', filters.district);
@@ -654,10 +714,17 @@ const HomePage: React.FC = () => {
         params.append('service_ids', JSON.stringify(filters.serviceIds));
       }
       if (filters.availabilityOnly) params.append('availability_only', 'true');
-      params.append('page', page.toString());
-      params.append('limit', '12');
+      
+      // 地図表示の場合は全件取得、リスト表示の場合はページング
+      if (currentViewMode === 'map') {
+        params.append('page', '1');
+        params.append('limit', '1000'); // 大きな値で全件取得
+      } else {
+        params.append('page', page.toString());
+        params.append('limit', '12');
+      }
 
-      console.log('検索実行:', { ...filters, page });
+      console.log('検索実行:', { ...filters, page, viewMode: currentViewMode });
 
       const response = await fetch(`/api/search/facilities?${params.toString()}`);
       const data: SearchResponse = await response.json();
@@ -667,7 +734,8 @@ const HomePage: React.FC = () => {
       }
 
       setFacilities(data.facilities || []);
-      setPagination(data.pagination);
+      // 地図表示の場合はページネーション情報をクリア
+      setPagination(currentViewMode === 'map' ? null : data.pagination);
     } catch (err) {
       console.error('検索エラー:', err);
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
@@ -700,6 +768,16 @@ const HomePage: React.FC = () => {
     const searchResultsElement = document.querySelector('.search-results');
     if (searchResultsElement) {
       searchResultsElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // ビューモード変更時
+  const handleViewModeChange = async (mode: 'list' | 'map') => {
+    setViewMode(mode);
+    
+    // 既に検索結果がある場合は、新しいビューモードで再検索
+    if (lastSearchFilters && hasSearched) {
+      await executeSearch(lastSearchFilters, 1, mode);
     }
   };
 
@@ -770,6 +848,8 @@ const HomePage: React.FC = () => {
             loading={loading} 
             error={error}
             onPageChange={handlePageChange}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
           />
         )}
 
