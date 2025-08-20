@@ -663,7 +663,7 @@ const HomePage: React.FC = () => {
       const data: SearchResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '検索に失敗しました');
+        throw new Error((data as any).error || '検索に失敗しました');
       }
 
       setFacilities(data.facilities || []);
