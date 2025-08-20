@@ -655,7 +655,7 @@ const HomePage: React.FC = () => {
       }
       if (filters.availabilityOnly) params.append('availability_only', 'true');
       params.append('page', page.toString());
-      params.append('limit', '20');
+      params.append('limit', '12');
 
       console.log('検索実行:', { ...filters, page });
 
