@@ -41,6 +41,18 @@ interface ServiceOption {
   description: string;
 }
 
+interface SearchResponse {
+  facilities: Facility[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 // サービスカテゴリとサービス一覧（実際の実装ではAPIから取得）
 const SERVICE_CATEGORIES = {
   '訪問系サービス': [
@@ -436,12 +448,116 @@ const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
   );
 };
 
-// 検索結果表示（既存のまま）
+// ページネーションコンポーネント
+const Pagination: React.FC<{
+  pagination: SearchResponse['pagination'];
+  onPageChange: (page: number) => void;
+  loading?: boolean;
+}> = ({ pagination, onPageChange, loading = false }) => {
+  const { page, pages, hasNext, hasPrev, total, limit } = pagination;
+  
+  // 表示するページ番号の範囲を計算
+  const getPageNumbers = () => {
+    const delta = 2; // 現在ページの前後何ページまで表示するか
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, page - delta); i <= Math.min(pages - 1, page + delta); i++) {
+      range.push(i);
+    }
+
+    if (page - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (page + delta < pages - 1) {
+      rangeWithDots.push('...', pages);
+    } else {
+      rangeWithDots.push(pages);
+    }
+
+    return rangeWithDots;
+  };
+
+  if (pages <= 1) return null;
+
+  const startItem = (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, total);
+
+  return (
+    <div className="pagination-container">
+      <div className="pagination-info">
+        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+          {startItem}-{endItem}件 / 全{total}件
+        </span>
+      </div>
+      
+      <div className="pagination-controls">
+        {/* 前のページボタン */}
+        <button
+          className="pagination-button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={!hasPrev || loading}
+          style={{ 
+            opacity: !hasPrev || loading ? 0.5 : 1,
+            cursor: !hasPrev || loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          ← 前へ
+        </button>
+
+        {/* ページ番号 */}
+        <div className="pagination-numbers">
+          {getPageNumbers().map((pageNum, index) => (
+            <React.Fragment key={index}>
+              {pageNum === '...' ? (
+                <span className="pagination-dots">...</span>
+              ) : (
+                <button
+                  className={`pagination-number ${pageNum === page ? 'active' : ''}`}
+                  onClick={() => onPageChange(pageNum as number)}
+                  disabled={loading || pageNum === page}
+                  style={{
+                    cursor: loading || pageNum === page ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1
+                  }}
+                >
+                  {pageNum}
+                </button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* 次のページボタン */}
+        <button
+          className="pagination-button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={!hasNext || loading}
+          style={{ 
+            opacity: !hasNext || loading ? 0.5 : 1,
+            cursor: !hasNext || loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          次へ →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// 検索結果表示（ページネーション対応版）
 const SearchResults: React.FC<{
   facilities: Facility[];
+  pagination: SearchResponse['pagination'] | null;
   loading: boolean;
   error: string | null;
-}> = ({ facilities, loading, error }) => {
+  onPageChange: (page: number) => void;
+}> = ({ facilities, pagination, loading, error, onPageChange }) => {
   if (loading) {
     return (
       <div className="loading-container">
@@ -481,14 +597,24 @@ const SearchResults: React.FC<{
     <div className="search-results">
       <div className="results-header">
         <h2 className="results-title">
-          検索結果 ({facilities.length}件)
+          検索結果 ({pagination?.total || facilities.length}件)
         </h2>
       </div>
+      
       <div className="facilities-grid">
         {facilities.map((facility) => (
           <FacilityCard key={facility.id} facility={facility} />
         ))}
       </div>
+
+      {/* ページネーション */}
+      {pagination && (
+        <Pagination 
+          pagination={pagination} 
+          onPageChange={onPageChange} 
+          loading={loading}
+        />
+      )}
     </div>
   );
 };
@@ -496,21 +622,30 @@ const SearchResults: React.FC<{
 // メインページ
 const HomePage: React.FC = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-
-  // 検索関数
-  const handleSearch = async (filters: { 
+  const [lastSearchFilters, setLastSearchFilters] = useState<{
     query: string; 
     district: string; 
     serviceIds: number[];
     availabilityOnly: boolean 
-  }) => {
+  } | null>(null);
+
+  // 検索実行関数（ページ指定対応）
+  const executeSearch = async (
+    filters: { 
+      query: string; 
+      district: string; 
+      serviceIds: number[];
+      availabilityOnly: boolean 
+    }, 
+    page: number = 1
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      setHasSearched(true);
 
       const params = new URLSearchParams();
       if (filters.query) params.append('query', filters.query);
@@ -519,25 +654,52 @@ const HomePage: React.FC = () => {
         params.append('service_ids', JSON.stringify(filters.serviceIds));
       }
       if (filters.availabilityOnly) params.append('availability_only', 'true');
-      params.append('page', '1');
-      params.append('limit', '20');
+      params.append('page', page.toString());
+      params.append('limit', '12');
 
-      console.log('検索実行:', filters);
+      console.log('検索実行:', { ...filters, page });
 
       const response = await fetch(`/api/search/facilities?${params.toString()}`);
-      const data = await response.json();
+      const data: SearchResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '検索に失敗しました');
+        throw new Error((data as any).error || '検索に失敗しました');
       }
 
       setFacilities(data.facilities || []);
+      setPagination(data.pagination);
     } catch (err) {
       console.error('検索エラー:', err);
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
       setFacilities([]);
+      setPagination(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 新しい検索（フィルター変更時）
+  const handleSearch = async (filters: { 
+    query: string; 
+    district: string; 
+    serviceIds: number[];
+    availabilityOnly: boolean 
+  }) => {
+    setHasSearched(true);
+    setLastSearchFilters(filters);
+    await executeSearch(filters, 1);
+  };
+
+  // ページ変更時
+  const handlePageChange = async (page: number) => {
+    if (!lastSearchFilters) return;
+    
+    await executeSearch(lastSearchFilters, page);
+    
+    // ページ変更後は検索結果の上部にスクロール
+    const searchResultsElement = document.querySelector('.search-results');
+    if (searchResultsElement) {
+      searchResultsElement.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -602,7 +764,13 @@ const HomePage: React.FC = () => {
 
         {/* 検索結果 */}
         {hasSearched && (
-          <SearchResults facilities={facilities} loading={loading} error={error} />
+          <SearchResults 
+            facilities={facilities} 
+            pagination={pagination}
+            loading={loading} 
+            error={error}
+            onPageChange={handlePageChange}
+          />
         )}
 
         {/* サービス案内（初回表示時のみ） */}
