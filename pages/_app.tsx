@@ -1,8 +1,16 @@
-import type { AppProps } from 'next/app';
 import '../styles/globals.css';
-import "leaflet/dist/leaflet.css";
+import type { AppProps } from 'next/app';
+import { AuthProvider } from '../components/layout/AuthProvider';
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+// Layoutコンポーネントのインポートを削除
+
+function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <AuthProvider>
+      {/* Layoutコンポーネントによるラップを削除 */}
+      <Component {...pageProps} />
+    </AuthProvider>
+  );
 }
 
+export default MyApp;
