@@ -1,5 +1,9 @@
 // scripts/import-wamnet-data.js
-require('dotenv').config();  // この行を追加
+const path = require('path');
+require('dotenv').config({ 
+  path: path.resolve(__dirname, '..', '.env.local') 
+});
+
 const fs = require('fs');
 const csv = require('csv-parser');
 const { createClient } = require('@supabase/supabase-js');
@@ -21,15 +25,39 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// 以下は元のコードと同じ...
-// 東京23区のマッピング
+// リトライ設定
+const RETRY_CONFIG = {
+  maxRetries: 1,
+  retryDelay: 500, // 0.5秒
+  backoffMultiplier: 2
+};
+
+// 東京都の市区町村のマッピング（23区 + 市部 + 町村部）
 const TOKYO_DISTRICTS = {
+  // 特別区（23区）
   '千代田区': '千代田区', '中央区': '中央区', '港区': '港区', '新宿区': '新宿区',
   '文京区': '文京区', '台東区': '台東区', '墨田区': '墨田区', '江東区': '江東区',
   '品川区': '品川区', '目黒区': '目黒区', '大田区': '大田区', '世田谷区': '世田谷区',
   '渋谷区': '渋谷区', '中野区': '中野区', '杉並区': '杉並区', '豊島区': '豊島区',
   '北区': '北区', '荒川区': '荒川区', '板橋区': '板橋区', '練馬区': '練馬区',
-  '足立区': '足立区', '葛飾区': '葛飾区', '江戸川区': '江戸川区'
+  '足立区': '足立区', '葛飾区': '葛飾区', '江戸川区': '江戸川区',
+  
+  // 市部
+  '八王子市': '八王子市', '立川市': '立川市', '武蔵野市': '武蔵野市', '三鷹市': '三鷹市',
+  '青梅市': '青梅市', '府中市': '府中市', '昭島市': '昭島市', '調布市': '調布市',
+  '町田市': '町田市', '小金井市': '小金井市', '小平市': '小平市', '日野市': '日野市',
+  '東村山市': '東村山市', '国分寺市': '国分寺市', '国立市': '国立市', '福生市': '福生市',
+  '狛江市': '狛江市', '東大和市': '東大和市', '清瀬市': '清瀬市', '東久留米市': '東久留米市',
+  '武蔵村山市': '武蔵村山市', '多摩市': '多摩市', '稲城市': '稲城市', '羽村市': '羽村市',
+  'あきる野市': 'あきる野市', '西東京市': '西東京市',
+  
+  // 西多摩郡
+  '瑞穂町': '瑞穂町', '日の出町': '日の出町', '檜原村': '檜原村', '奥多摩町': '奥多摩町',
+  
+  // 島しょ部
+  '大島町': '大島町', '利島村': '利島村', '新島村': '新島村', '神津島村': '神津島村',
+  '三宅村': '三宅村', '御蔵島村': '御蔵島村', '八丈町': '八丈町', '青ヶ島村': '青ヶ島村',
+  '小笠原村': '小笠原村'
 };
 
 // サービス種別のマッピング
@@ -65,15 +93,140 @@ const SERVICE_MAPPING = {
   '障害児相談支援': 29
 };
 
-// 地区を抽出する関数
+// エラー統計を管理するクラス
+class ImportStats {
+  constructor() {
+    this.csvProcessed = 0;
+    this.csvErrors = 0;
+    this.facilitiesInserted = 0;
+    this.facilitiesFailed = 0;
+    this.servicesInserted = 0;
+    this.servicesFailed = 0;
+    this.retryCount = 0;
+    this.startTime = new Date();
+  }
+
+  logProgress() {
+    const elapsed = Math.floor((new Date() - this.startTime) / 1000);
+    console.log(`\n=== 進捗レポート (${elapsed}秒経過) ===`);
+    console.log(`CSV処理: ${this.csvProcessed}件 (エラー: ${this.csvErrors}件)`);
+    console.log(`事業所挿入: ${this.facilitiesInserted}件 (失敗: ${this.facilitiesFailed}件)`);
+    console.log(`サービス挿入: ${this.servicesInserted}件 (失敗: ${this.servicesFailed}件)`);
+    console.log(`リトライ実行回数: ${this.retryCount}回`);
+  }
+
+  logFinal() {
+    const elapsed = Math.floor((new Date() - this.startTime) / 1000);
+    console.log(`\n=== 最終結果 (総時間: ${elapsed}秒) ===`);
+    console.log(`✅ 事業所挿入成功: ${this.facilitiesInserted}件`);
+    console.log(`✅ サービス挿入成功: ${this.servicesInserted}件`);
+    if (this.facilitiesFailed > 0 || this.servicesFailed > 0) {
+      console.log(`❌ 事業所挿入失敗: ${this.facilitiesFailed}件`);
+      console.log(`❌ サービス挿入失敗: ${this.servicesFailed}件`);
+    }
+  }
+}
+
+// リトライ機能付きのデータベース操作
+async function executeWithRetry(operation, description, stats) {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = RETRY_CONFIG.retryDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt - 1);
+        console.log(`⏳ ${description} - リトライ ${attempt}/${RETRY_CONFIG.maxRetries} (${delay}ms待機)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        stats.retryCount++;
+      }
+      
+      const result = await operation();
+      
+      if (attempt > 0) {
+        console.log(`✅ ${description} - リトライ成功`);
+      }
+      
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.error(`❌ ${description} - 試行 ${attempt + 1} 失敗:`, error.message);
+      
+      // 致命的エラーの場合は即座に中断
+      if (isFatalError(error)) {
+        console.error(`🚨 致命的エラーのため処理を中断します`);
+        throw error;
+      }
+    }
+  }
+  
+  console.error(`❌ ${description} - 全てのリトライが失敗しました`);
+  throw lastError;
+}
+
+// 致命的エラーかどうかを判定
+function isFatalError(error) {
+  // 認証エラーや設定エラーなど、リトライしても解決しない問題
+  const fatalMessages = [
+    'Invalid API key',
+    'Authentication failed',
+    'Permission denied',
+    'Database connection failed',
+    'Invalid database URL'
+  ];
+  
+  return fatalMessages.some(msg => error.message.includes(msg));
+}
+
+// データベーストランザクション管理
+async function withTransaction(operations) {
+  // Supabaseはトランザクションを直接サポートしていないため、
+  // エラー発生時にロールバック処理を実行
+  const rollbackOperations = [];
+  
+  try {
+    const results = [];
+    for (const operation of operations) {
+      const result = await operation.execute();
+      results.push(result);
+      if (operation.rollback) {
+        rollbackOperations.push(operation.rollback);
+      }
+    }
+    return results;
+  } catch (error) {
+    console.log('⏪ エラーが発生したためロールバックを実行します...');
+    for (const rollback of rollbackOperations.reverse()) {
+      try {
+        await rollback();
+      } catch (rollbackError) {
+        console.error('ロールバック失敗:', rollbackError);
+      }
+    }
+    throw error;
+  }
+}
+
+// 地区を抽出する関数（改良版）
 function extractDistrict(address) {
   if (!address) return null;
   
+  // 完全一致を優先してチェック
   for (const district of Object.keys(TOKYO_DISTRICTS)) {
     if (address.includes(district)) {
       return district;
     }
   }
+  
+  // 「東京都」を含む住所の場合、東京都を除いた部分から地区を抽出
+  if (address.includes('東京都')) {
+    const addressWithoutTokyo = address.replace('東京都', '');
+    for (const district of Object.keys(TOKYO_DISTRICTS)) {
+      if (addressWithoutTokyo.includes(district)) {
+        return district;
+      }
+    }
+  }
+  
   return null;
 }
 
@@ -121,22 +274,21 @@ function generateAppealPoints() {
 }
 
 async function importWAMNETData() {
+  const stats = new ImportStats();
   console.log('WAMNETデータのインポートを開始します...');
   
   const facilities = [];
   const facilityServices = [];
-  let processedCount = 0;
-  let errorCount = 0;
 
   return new Promise((resolve, reject) => {
     fs.createReadStream('wamnet.csv')
       .pipe(csv())
       .on('data', (row) => {
         try {
-          // 東京都のデータのみ処理
+          // 東京都のデータのみ処理（全市区町村対応）
           const district = extractDistrict(row['事業所住所（市区町村）']);
           if (!district) {
-            return; // 東京23区以外はスキップ
+            return; // 東京都以外はスキップ
           }
 
           // サービス種別の確認
@@ -187,92 +339,148 @@ async function importWAMNETData() {
           };
 
           facilityServices.push(facilityService);
-          processedCount++;
+          stats.csvProcessed++;
 
-          if (processedCount % 1000 === 0) {
-            console.log(`処理済み: ${processedCount} 件`);
+          if (stats.csvProcessed % 1000 === 0) {
+            console.log(`処理済み: ${stats.csvProcessed} 件`);
           }
 
         } catch (error) {
-          console.error('データ処理エラー:', error);
-          errorCount++;
+          console.error('CSV行処理エラー:', error);
+          stats.csvErrors++;
         }
       })
       .on('end', async () => {
         console.log(`\nCSV読み込み完了`);
-        console.log(`処理済み: ${processedCount} 件`);
+        console.log(`処理済み: ${stats.csvProcessed} 件`);
         console.log(`東京23区内の事業所: ${facilities.length} 件`);
-        console.log(`エラー: ${errorCount} 件`);
+        console.log(`エラー: ${stats.csvErrors} 件`);
 
         try {
-          await insertFacilitiesToDB(facilities, facilityServices);
+          await insertFacilitiesToDB(facilities, facilityServices, stats);
+          stats.logFinal();
           resolve();
         } catch (error) {
+          stats.logFinal();
           reject(error);
         }
       })
       .on('error', (error) => {
         console.error('CSV読み込みエラー:', error);
+        stats.csvErrors++;
         reject(error);
       });
   });
 }
 
-async function insertFacilitiesToDB(facilities, facilityServices) {
+async function insertFacilitiesToDB(facilities, facilityServices, stats) {
   console.log('\nデータベースへの挿入を開始...');
 
   try {
-    // 既存の施設データを削除（開発環境での再インポート用）
-    if (process.env.NODE_ENV === 'development') {
-      console.log('既存データを削除中...');
-      await supabase.from('facility_services').delete().neq('id', 0);
-      await supabase.from('facilities').delete().neq('id', 0);
-    }
+    // トランザクション的な処理のために、清掃とデータ挿入を分離
+    await withTransaction([
+      {
+        execute: async () => {
+          // 既存の施設データを削除（開発環境での再インポート用）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('既存データを削除中...');
+            await executeWithRetry(
+              () => supabase.from('facility_services').delete().neq('id', 0),
+              'facility_services削除',
+              stats
+            );
+            await executeWithRetry(
+              () => supabase.from('facilities').delete().neq('id', 0),
+              'facilities削除',
+              stats
+            );
+          }
+        }
+      }
+    ]);
 
     // 事業所データを挿入（バッチ処理）
     const batchSize = 50;
     const facilitiesInserted = [];
+    const failedFacilities = [];
 
     for (let i = 0; i < facilities.length; i += batchSize) {
       const batch = facilities.slice(i, i + batchSize);
       
-      const { data, error } = await supabase
-        .from('facilities')
-        .insert(batch.map(f => ({
-          name: f.name,
-          description: f.description,
-          appeal_points: f.appeal_points,
-          address: f.address,
-          district: f.district,
-          latitude: f.latitude,
-          longitude: f.longitude,
-          phone_number: f.phone_number,
-          website_url: f.website_url,
-          image_url: f.image_url,
-          is_active: f.is_active
-        })))
-        .select('id, name, district');
+      try {
+        const result = await executeWithRetry(
+          async () => {
+            const { data, error } = await supabase
+              .from('facilities')
+              .insert(batch.map(f => ({
+                name: f.name,
+                description: f.description,
+                appeal_points: f.appeal_points,
+                address: f.address,
+                district: f.district,
+                latitude: f.latitude,
+                longitude: f.longitude,
+                phone_number: f.phone_number,
+                website_url: f.website_url,
+                image_url: f.image_url,
+                is_active: f.is_active
+              })))
+              .select('id, name, district');
 
-      if (error) {
-        throw error;
+            if (error) {
+              throw error;
+            }
+            return data;
+          },
+          `事業所バッチ挿入 (${i + 1}-${Math.min(i + batchSize, facilities.length)})`,
+          stats
+        );
+
+        // 挿入された事業所のIDをマッピング
+        result.forEach((facility, index) => {
+          const originalFacility = batch[index];
+          const facilityKey = `${originalFacility.name}_${originalFacility.district}_${originalFacility.external_id}`;
+          facilitiesInserted.push({
+            id: facility.id,
+            key: facilityKey
+          });
+        });
+
+        stats.facilitiesInserted += result.length;
+        console.log(`✅ 事業所挿入進捗: ${stats.facilitiesInserted}/${facilities.length}`);
+
+      } catch (error) {
+        console.error(`❌ バッチ挿入失敗 (${i + 1}-${Math.min(i + batchSize, facilities.length)}):`, error.message);
+        stats.facilitiesFailed += batch.length;
+        failedFacilities.push(...batch.map((f, idx) => ({ ...f, batchIndex: i + idx })));
+        
+        // 致命的エラーの場合は処理を中断
+        if (isFatalError(error)) {
+          throw error;
+        }
       }
 
-      // 挿入された事業所のIDをマッピング
-      data.forEach((facility, index) => {
-        const originalFacility = batch[index];
-        const facilityKey = `${originalFacility.name}_${originalFacility.district}_${originalFacility.external_id}`;
-        facilitiesInserted.push({
-          id: facility.id,
-          key: facilityKey
-        });
-      });
+      // 進捗レポート（10バッチごと）
+      if ((i / batchSize) % 10 === 0) {
+        stats.logProgress();
+      }
+    }
 
-      console.log(`事業所挿入進捗: ${Math.min(i + batchSize, facilities.length)}/${facilities.length}`);
+    // 失敗した事業所がある場合は詳細をログ出力
+    if (failedFacilities.length > 0) {
+      console.log(`\n⚠️  挿入に失敗した事業所: ${failedFacilities.length}件`);
+      failedFacilities.slice(0, 5).forEach(f => {
+        console.log(`  - ${f.name} (${f.district})`);
+      });
+      if (failedFacilities.length > 5) {
+        console.log(`  ... その他 ${failedFacilities.length - 5}件`);
+      }
     }
 
     // サービスデータを挿入
-    console.log('サービスデータを挿入中...');
+    console.log('\nサービスデータを挿入中...');
     const servicesToInsert = [];
+    const failedServices = [];
 
     facilityServices.forEach(fs => {
       const facilityData = facilitiesInserted.find(f => f.key === fs.facility_key);
@@ -291,23 +499,56 @@ async function insertFacilitiesToDB(facilities, facilityServices) {
     for (let i = 0; i < servicesToInsert.length; i += batchSize) {
       const batch = servicesToInsert.slice(i, i + batchSize);
       
-      const { error } = await supabase
-        .from('facility_services')
-        .insert(batch);
+      try {
+        await executeWithRetry(
+          async () => {
+            const { error } = await supabase
+              .from('facility_services')
+              .insert(batch);
 
-      if (error) {
-        console.error('サービスデータ挿入エラー:', error);
+            if (error) {
+              throw error;
+            }
+          },
+          `サービスバッチ挿入 (${i + 1}-${Math.min(i + batchSize, servicesToInsert.length)})`,
+          stats
+        );
+
+        stats.servicesInserted += batch.length;
+        console.log(`✅ サービス挿入進捗: ${stats.servicesInserted}/${servicesToInsert.length}`);
+
+      } catch (error) {
+        console.error(`❌ サービスバッチ挿入失敗 (${i + 1}-${Math.min(i + batchSize, servicesToInsert.length)}):`, error.message);
+        stats.servicesFailed += batch.length;
+        failedServices.push(...batch);
+        
+        // 致命的エラーの場合は処理を中断
+        if (isFatalError(error)) {
+          throw error;
+        }
       }
 
-      console.log(`サービス挿入進捗: ${Math.min(i + batchSize, servicesToInsert.length)}/${servicesToInsert.length}`);
+      // 進捗レポート（10バッチごと）
+      if ((i / batchSize) % 10 === 0) {
+        stats.logProgress();
+      }
     }
 
+    // 最終チェック
+    const finalFacilityCount = await supabase
+      .from('facilities')
+      .select('id', { count: 'exact', head: true });
+    
+    const finalServiceCount = await supabase
+      .from('facility_services')
+      .select('id', { count: 'exact', head: true });
+
     console.log('\n✅ データインポート完了!');
-    console.log(`事業所: ${facilitiesInserted.length} 件`);
-    console.log(`サービス関連: ${servicesToInsert.length} 件`);
+    console.log(`DB内事業所数: ${finalFacilityCount.count} 件`);
+    console.log(`DB内サービス数: ${finalServiceCount.count} 件`);
 
   } catch (error) {
-    console.error('データベース挿入エラー:', error);
+    console.error('🚨 データベース挿入で致命的エラーが発生しました:', error);
     throw error;
   }
 }
@@ -316,11 +557,11 @@ async function insertFacilitiesToDB(facilities, facilityServices) {
 if (require.main === module) {
   importWAMNETData()
     .then(() => {
-      console.log('インポート処理が完了しました。');
+      console.log('🎉 インポート処理が完了しました。');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('インポート処理でエラーが発生しました:', error);
+      console.error('💥 インポート処理でエラーが発生しました:', error);
       process.exit(1);
     });
 }
