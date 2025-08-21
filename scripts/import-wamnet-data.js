@@ -27,8 +27,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // リトライ設定
 const RETRY_CONFIG = {
-  maxRetries: 3,
-  retryDelay: 1000, // 1秒
+  maxRetries: 1,
+  retryDelay: 500, // 0.5秒
   backoffMultiplier: 2
 };
 
