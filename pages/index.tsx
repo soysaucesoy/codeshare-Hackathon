@@ -1,9 +1,11 @@
-// pages/index.tsx - 完全版（外部依存解決済み）
+// 提供されたindex.tsxを globals.css スタイルに合わせて調整
+// pages/index.tsx
 import React, { useState, useEffect, MouseEvent } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useAuthContext } from '@/components/providers/AuthProvider';
 
-// 型定義
+// 型定義（同じ）
 interface Service {
   id: number;
   availability: 'available' | 'unavailable';
@@ -46,7 +48,7 @@ interface SearchResponse {
   };
 }
 
-// ToggleSwitchコンポーネント（インライン実装）
+// ToggleSwitchコンポーネント（globals.cssに合わせて調整）
 const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -57,109 +59,81 @@ const ToggleSwitch: React.FC<{
   disabled?: boolean;
 }> = ({ checked, onChange, leftLabel, rightLabel, leftIcon, rightIcon, disabled = false }) => {
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.75rem',
-      opacity: disabled ? 0.5 : 1
-    }}>
-      <span style={{ 
-        fontSize: '0.875rem', 
-        color: !checked ? '#22c55e' : '#6b7280',
-        fontWeight: !checked ? 600 : 400,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.25rem'
-      }}>
-        {leftIcon} {leftLabel}
-      </span>
+    <div className="toggle-switch-wrapper">
+      <div 
+        className={`toggle-switch-label ${!checked ? 'active' : ''}`}
+        onClick={() => !disabled && onChange(false)}
+      >
+        <span className="toggle-icon">{leftIcon}</span>
+        {leftLabel}
+      </div>
       
       <div
-        style={{
-          position: 'relative',
-          width: '3rem',
-          height: '1.5rem',
-          backgroundColor: checked ? '#22c55e' : '#d1d5db',
-          borderRadius: '0.75rem',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          transition: 'background-color 0.3s'
-        }}
+        className={`toggle-switch ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}
         onClick={() => !disabled && onChange(!checked)}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: '0.125rem',
-            left: checked ? '1.625rem' : '0.125rem',
-            width: '1.25rem',
-            height: '1.25rem',
-            backgroundColor: 'white',
-            borderRadius: '50%',
-            transition: 'left 0.3s',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-          }}
-        />
+        <div className="toggle-switch-slider">
+          <div className="toggle-switch-thumb" />
+        </div>
       </div>
 
-      <span style={{ 
-        fontSize: '0.875rem', 
-        color: checked ? '#22c55e' : '#6b7280',
-        fontWeight: checked ? 600 : 400,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.25rem'
-      }}>
-        {rightIcon} {rightLabel}
-      </span>
+      <div 
+        className={`toggle-switch-label ${checked ? 'active' : ''}`}
+        onClick={() => !disabled && onChange(true)}
+      >
+        <span className="toggle-icon">{rightIcon}</span>
+        {rightLabel}
+      </div>
     </div>
   );
 };
 
-// MapViewコンポーネント（簡易版実装）
+// MapViewコンポーネント（globals.cssに合わせて調整）
 const MapView: React.FC<{ facilities: Facility[]; loading?: boolean }> = ({ facilities, loading = false }) => {
   if (loading) {
     return (
-      <div style={{
-        width: '100%',
-        height: '500px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9fafb',
-        borderRadius: '0.5rem',
-        border: '1px solid #e5e7eb'
-      }}>
-        <div>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem', textAlign: 'center' }}>⏳</div>
-          <p>地図を読み込み中...</p>
-        </div>
+      <div className="map-loading">
+        <div className="loading-spinner">⏳</div>
+        <p>地図を読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (facilities.length === 0) {
+    return (
+      <div className="map-no-results">
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
+        <h3>表示する事業所がありません</h3>
+        <p style={{ color: '#6b7280', marginTop: '0.5rem' }}>
+          検索条件を変更してお試しください
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{
-      width: '100%',
-      height: '500px',
-      backgroundColor: '#f9fafb',
-      borderRadius: '0.5rem',
-      border: '1px solid #e5e7eb',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column'
-    }}>
-      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
-      <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>地図表示</h3>
-      <p style={{ color: '#6b7280', textAlign: 'center' }}>
-        {facilities.length}件の事業所が見つかりました<br />
-        地図機能は開発中です
-      </p>
+    <div className="map-container">
+      <div style={{
+        height: '600px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column'
+      }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🗺️</div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>地図表示</h3>
+        <p style={{ color: '#6b7280', textAlign: 'center' }}>
+          地図機能は開発中です
+        </p>
+      </div>
+      <div className="map-stats">
+        {facilities.length}件の事業所が見つかりました
+      </div>
     </div>
   );
 };
 
-// サービスカテゴリとサービス一覧
+// サービスカテゴリ（同じ）
 const SERVICE_CATEGORIES = {
   '訪問系サービス': [
     { id: 1, name: '居宅介護', description: '自宅で入浴、排せつ、食事の介護などを行います' },
@@ -188,7 +162,7 @@ const SERVICE_CATEGORIES = {
   ],
 };
 
-// 検索フィルター
+// SearchFilterコンポーネント（globals.cssに合わせて調整）
 const SearchFilter: React.FC<{
   onSearch: (filters: { 
     query: string; 
@@ -226,24 +200,17 @@ const SearchFilter: React.FC<{
     setSelectedServices([]);
   };
 
-  // 東京都全体の市区町村リスト
+  // 東京都の市区町村リスト（同じ）
   const districts = [
-    // 特別区（23区）
     '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区',
     '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区',
     '杉並区', '豊島区', '北区', '荒川区', '板橋区', '練馬区', '足立区',
     '葛飾区', '江戸川区',
-    
-    // 市部
     '八王子市', '立川市', '武蔵野市', '三鷹市', '青梅市', '府中市', '昭島市',
     '調布市', '町田市', '小金井市', '小平市', '日野市', '東村山市', '国分寺市',
     '国立市', '福生市', '狛江市', '東大和市', '清瀬市', '東久留米市',
     '武蔵村山市', '多摩市', '稲城市', '羽村市', 'あきる野市', '西東京市',
-    
-    // 西多摩郡
     '瑞穂町', '日の出町', '檜原村', '奥多摩町',
-    
-    // 島しょ部
     '大島町', '利島村', '新島村', '神津島村', '三宅村', '御蔵島村',
     '八丈町', '青ヶ島村', '小笠原村'
   ];
@@ -483,7 +450,7 @@ const SearchFilter: React.FC<{
   );
 };
 
-// 事業所カード
+// FacilityCardコンポーネント（globals.cssに合わせて調整）
 const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
@@ -568,7 +535,7 @@ const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
   );
 };
 
-// ページネーションコンポーネント
+// Paginationコンポーネント（globals.cssに合わせて調整）
 const Pagination: React.FC<{
   pagination: SearchResponse['pagination'];
   onPageChange: (page: number) => void;
@@ -608,9 +575,9 @@ const Pagination: React.FC<{
   const endItem = Math.min(page * limit, total);
 
   return (
-    <div className="pagination-container">
+    <div className={`pagination-container ${loading ? 'loading' : ''}`}>
       <div className="pagination-info">
-        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+        <span>
           {startItem}-{endItem}件 / 全{total}件
         </span>
       </div>
@@ -620,10 +587,6 @@ const Pagination: React.FC<{
           className="pagination-button"
           onClick={() => onPageChange(page - 1)}
           disabled={!hasPrev || loading}
-          style={{ 
-            opacity: !hasPrev || loading ? 0.5 : 1,
-            cursor: !hasPrev || loading ? 'not-allowed' : 'pointer'
-          }}
         >
           ← 前へ
         </button>
@@ -638,10 +601,6 @@ const Pagination: React.FC<{
                   className={`pagination-number ${pageNum === page ? 'active' : ''}`}
                   onClick={() => onPageChange(pageNum as number)}
                   disabled={loading || pageNum === page}
-                  style={{
-                    cursor: loading || pageNum === page ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
                 >
                   {pageNum}
                 </button>
@@ -654,10 +613,6 @@ const Pagination: React.FC<{
           className="pagination-button"
           onClick={() => onPageChange(page + 1)}
           disabled={!hasNext || loading}
-          style={{ 
-            opacity: !hasNext || loading ? 0.5 : 1,
-            cursor: !hasNext || loading ? 'not-allowed' : 'pointer'
-          }}
         >
           次へ →
         </button>
@@ -666,7 +621,7 @@ const Pagination: React.FC<{
   );
 };
 
-// 検索結果表示
+// SearchResultsコンポーネント（globals.cssに合わせて調整）
 const SearchResults: React.FC<{
   facilities: Facility[];
   pagination: SearchResponse['pagination'] | null;
@@ -774,8 +729,10 @@ const SearchResults: React.FC<{
   );
 };
 
-// メインページ
+// メインページ（globals.cssに合わせて調整）
 const HomePage: React.FC = () => {
+  const { user, loading: authLoading } = useAuthContext();
+  
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -871,6 +828,37 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // 認証状態に応じたボタンの表示
+  const renderAuthButtons = () => {
+    if (authLoading) {
+      return <div className="animate-pulse w-20 h-8 bg-gray-300 rounded"></div>;
+    }
+
+    if (user) {
+      return (
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <span style={{ color: '#374151', fontSize: '0.875rem' }}>
+            {user.user_metadata?.full_name || user.email}さん
+          </span>
+          <Link href="/dashboard" className="cta-primary">
+            ダッシュボード
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <Link href="/auth/login" className="cta-secondary">
+          ログイン
+        </Link>
+        <Link href="/auth/register" className="cta-primary">
+          新規登録
+        </Link>
+      </div>
+    );
+  };
+
   return (
     <div>
       <Head>
@@ -882,94 +870,19 @@ const HomePage: React.FC = () => {
       </Head>
 
       {/* ヘッダー */}
-      <header style={{ 
-        background: 'white', 
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', 
-        borderBottom: '1px solid #e5e7eb',
-        padding: '1rem 0'
-      }}>
-        <div style={{ 
-          maxWidth: '80rem', 
-          margin: '0 auto', 
-          padding: '0 1.5rem',
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ 
-              width: '2rem', 
-              height: '2rem', 
-              background: '#22c55e', 
-              borderRadius: '0.5rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.125rem' }}>C</span>
+      <header className="header">
+        <div className="container">
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between' 
+          }}>
+            <div className="logo-container">
+              <div className="logo">C</div>
+              <span className="main-title">ケアコネクト</span>
             </div>
-            <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>ケアコネクト</span>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <Link 
-              href="/help" 
-              style={{ 
-                padding: '0.5rem 0.75rem', 
-                fontSize: '0.875rem', 
-                fontWeight: '500', 
-                color: '#374151', 
-                textDecoration: 'none',
-                borderRadius: '0.375rem',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => {
-                (e.target as HTMLAnchorElement).style.backgroundColor = '#f3f4f6';
-                (e.target as HTMLAnchorElement).style.color = '#111827';
-              }}
-              onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => {
-                (e.target as HTMLAnchorElement).style.backgroundColor = 'transparent';
-                (e.target as HTMLAnchorElement).style.color = '#374151';
-              }}
-            >
-              ヘルプ
-            </Link>
             
-            <Link 
-              href="/auth/login" 
-              style={{ 
-                padding: '0.5rem 0.75rem', 
-                fontSize: '0.875rem', 
-                fontWeight: '500', 
-                color: '#374151', 
-                background: '#f3f4f6', 
-                borderRadius: '0.375rem',
-                textDecoration: 'none',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#e5e7eb'}
-              onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#f3f4f6'}
-            >
-              ログイン
-            </Link>
-            
-            <Link 
-              href="/auth/register" 
-              style={{ 
-                padding: '0.5rem 0.75rem', 
-                fontSize: '0.875rem', 
-                fontWeight: '500', 
-                color: 'white', 
-                background: '#22c55e', 
-                borderRadius: '0.375rem',
-                textDecoration: 'none',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#16a34a'}
-              onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#22c55e'}
-            >
-              新規登録
-            </Link>
+            {renderAuthButtons()}
           </div>
         </div>
       </header>
@@ -1067,46 +980,10 @@ const HomePage: React.FC = () => {
               登録すると、ブックマーク機能やメッセージ機能をご利用いただけます。
             </p>
             <div className="cta-buttons">
-              <Link 
-                href="/auth/register?type=user"
-                style={{
-                  display: 'inline-block',
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#22c55e',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '0.5rem',
-                  fontWeight: 600,
-                  transition: 'background-color 0.2s',
-                  marginRight: '1rem'
-                }}
-                onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#16a34a'}
-                onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => (e.target as HTMLAnchorElement).style.backgroundColor = '#22c55e'}
-              >
+              <Link href="/auth/register?type=user" className="cta-primary">
                 利用者として登録
               </Link>
-              <Link 
-                href="/auth/register?type=facility"
-                style={{
-                  display: 'inline-block',
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  textDecoration: 'none',
-                  borderRadius: '0.5rem',
-                  fontWeight: 600,
-                  border: '1px solid #d1d5db',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => {
-                  (e.target as HTMLAnchorElement).style.backgroundColor = '#f9fafb';
-                  (e.target as HTMLAnchorElement).style.borderColor = '#9ca3af';
-                }}
-                onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => {
-                  (e.target as HTMLAnchorElement).style.backgroundColor = 'white';
-                  (e.target as HTMLAnchorElement).style.borderColor = '#d1d5db';
-                }}
-              >
+              <Link href="/auth/register?type=facility" className="cta-secondary">
                 事業所として登録
               </Link>
             </div>
