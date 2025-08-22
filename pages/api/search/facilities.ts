@@ -46,14 +46,14 @@ export default async function handler(
       service_ids,
       availability_only = 'false',
       page = '1',
-      limit = '20'
+      limit = '12'
     } = req.query;
 
     const searchQuery = Array.isArray(query) ? query[0] : query;
     const searchDistrict = Array.isArray(district) ? district[0] : district;
     const searchAvailabilityOnly = (Array.isArray(availability_only) ? availability_only[0] : availability_only) === 'true';
     const pageNum = Math.max(1, parseInt(Array.isArray(page) ? page[0] : page, 10) || 1);
-    const limitNum = Math.max(1, Math.min(1000, parseInt(Array.isArray(limit) ? limit[0] : limit, 10) || 20));
+    const limitNum = Math.max(1, Math.min(1000, parseInt(Array.isArray(limit) ? limit[0] : limit, 10) || 12));
     const offset = (pageNum - 1) * limitNum;
 
     let serviceIds: number[] = [];
