@@ -1,12 +1,9 @@
-// pages/index.tsx - エラー修正完全版
-import React, { useState, useEffect ,useRouter} from 'react';
+// pages/index.tsx - ページネーション機能付き完全版
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
-import { supabase } from '@/lib/supabase/client'
-
-
 
 // 型定義
 interface Service {
@@ -357,6 +354,130 @@ const SearchFilterComponent: React.FC<{
   );
 };
 
+// ページネーションコンポーネント
+const Pagination: React.FC<{
+  pagination: SearchResponse['pagination'];
+  onPageChange: (page: number) => void;
+  loading?: boolean;
+}> = ({ pagination, onPageChange, loading = false }) => {
+  if (!pagination || pagination.pages <= 1) return null;
+
+  const { page, pages, hasNext, hasPrev } = pagination;
+  
+  // 表示するページ番号の範囲を計算
+  const getPageNumbers = () => {
+    const maxVisible = 5;
+    const half = Math.floor(maxVisible / 2);
+    
+    let start = Math.max(1, page - half);
+    let end = Math.min(pages, start + maxVisible - 1);
+    
+    // 終端に合わせて開始点を調整
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  const buttonStyle = (isActive: boolean = false, disabled: boolean = false) => ({
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #d1d5db',
+    background: isActive ? '#22c55e' : disabled ? '#f9fafb' : 'white',
+    color: isActive ? 'white' : disabled ? '#9ca3af' : '#374151',
+    cursor: disabled || loading ? 'not-allowed' : 'pointer',
+    borderRadius: '0.375rem',
+    fontSize: '0.875rem',
+    fontWeight: isActive ? '600' : '400',
+    opacity: disabled ? 0.5 : 1,
+    transition: 'all 0.2s'
+  });
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '0.5rem',
+      marginTop: '2rem',
+      padding: '1rem'
+    }}>
+      {/* 前へボタン */}
+      <button
+        onClick={() => onPageChange(page - 1)}
+        disabled={!hasPrev || loading}
+        style={buttonStyle(false, !hasPrev || loading)}
+      >
+        ← 前へ
+      </button>
+
+      {/* 最初のページ（1ページ目が表示範囲外の場合） */}
+      {pageNumbers[0] > 1 && (
+        <>
+          <button
+            onClick={() => onPageChange(1)}
+            disabled={loading}
+            style={buttonStyle(false, loading)}
+          >
+            1
+          </button>
+          {pageNumbers[0] > 2 && (
+            <span style={{ color: '#9ca3af', padding: '0 0.5rem' }}>...</span>
+          )}
+        </>
+      )}
+
+      {/* ページ番号ボタン */}
+      {pageNumbers.map((pageNum) => (
+        <button
+          key={pageNum}
+          onClick={() => onPageChange(pageNum)}
+          disabled={loading}
+          style={buttonStyle(pageNum === page, loading)}
+        >
+          {pageNum}
+        </button>
+      ))}
+
+      {/* 最後のページ（最終ページが表示範囲外の場合） */}
+      {pageNumbers[pageNumbers.length - 1] < pages && (
+        <>
+          {pageNumbers[pageNumbers.length - 1] < pages - 1 && (
+            <span style={{ color: '#9ca3af', padding: '0 0.5rem' }}>...</span>
+          )}
+          <button
+            onClick={() => onPageChange(pages)}
+            disabled={loading}
+            style={buttonStyle(false, loading)}
+          >
+            {pages}
+          </button>
+        </>
+      )}
+
+      {/* 次へボタン */}
+      <button
+        onClick={() => onPageChange(page + 1)}
+        disabled={!hasNext || loading}
+        style={buttonStyle(false, !hasNext || loading)}
+      >
+        次へ →
+      </button>
+
+      {/* ページ情報表示 */}
+      <div style={{
+        marginLeft: '1rem',
+        fontSize: '0.875rem',
+        color: '#6b7280'
+      }}>
+        {page}/{pages} ページ（全{pagination.total}件）
+      </div>
+    </div>
+  );
+};
+
 // ブックマーク機能付きFacilityCardコンポーネント
 const FacilityCard: React.FC<{ 
   facility: Facility;
@@ -609,17 +730,28 @@ const SearchResults: React.FC<{
           )}
           
           {!loading && facilities.length > 0 && (
-            <div className="facilities-grid">
-              {facilities.map((facility) => (
-                <FacilityCard 
-                  key={facility.id} 
-                  facility={facility} 
-                  isLoggedIn={isLoggedIn}
-                  isBookmarked={isBookmarked(facility.id)}
-                  onBookmarkToggle={onBookmarkToggle}
+            <>
+              <div className="facilities-grid">
+                {facilities.map((facility) => (
+                  <FacilityCard 
+                    key={facility.id} 
+                    facility={facility} 
+                    isLoggedIn={isLoggedIn}
+                    isBookmarked={isBookmarked(facility.id)}
+                    onBookmarkToggle={onBookmarkToggle}
+                  />
+                ))}
+              </div>
+
+              {/* ページネーション */}
+              {!isBookmarkMode && pagination && (
+                <Pagination
+                  pagination={pagination}
+                  onPageChange={onPageChange}
+                  loading={loading}
                 />
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* ブックマーク機能の説明（未ログイン時） */}
@@ -819,6 +951,8 @@ const HomePage: React.FC = () => {
   const handlePageChange = async (page: number) => {
     if (!lastSearchFilters) return;
     await executeSearch(lastSearchFilters, page);
+    // ページ変更時に上部にスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleViewModeChange = (mode: 'list' | 'map') => {
@@ -942,22 +1076,6 @@ const HomePage: React.FC = () => {
 )}
 
 </section>
-
-
-      {/* 
-      ヒーロー部分
-      <section className="hero-section">
-        <div className="container">
-          <h1 className="hero-title">
-        東京都の障害福祉サービス<br />
-        <span className="hero-accent">事業所検索</span>
-          </h1>
-          <p className="hero-description">
-        あなたにぴったりのケアサービスを見つけよう
-          </p>
-        </div>
-      </section>
-      */}
       
       {/* メインコンテンツ */}
       <main className="container">
