@@ -21,7 +21,7 @@ const DashboardPage: React.FC = () => {
     if (!loading && user) {
       const timer = setTimeout(() => {
         router.push('/') // ← 遷移先を指定
-      }, 300000)
+      }, 3000)
       return () => clearTimeout(timer) // クリーンアップ
     }
   }, [user, loading, router])
