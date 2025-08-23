@@ -1,4 +1,4 @@
-// pages/index.tsx - エラー修正完全版
+// pages/index.tsx - ヘッダー内認証ボタン修正版
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router'; // 必要に応じて別行で
 import Head from 'next/head';
@@ -189,7 +189,6 @@ const SearchFilterComponent: React.FC<{
             </button>
           </div>
 
-
         </div>
 
         {/* サービス選択パネル */}
@@ -345,7 +344,7 @@ const SearchFilterComponent: React.FC<{
               checked={availabilityOnly}
               onChange={(e) => setAvailabilityOnly(e.target.checked)}
             />
-            <span className="filter-checkbox-label" style={{ fontSize: '1.5rem', fontWeight: '500' }}>現在募集中</span>
+            <span className="filter-checkbox-label" style={{ fontSize: '1.5rem', fontWeight: '500' }}>空きのある事務所のみ</span>
           </label>
           <button
             type="submit"
@@ -978,37 +977,6 @@ const HomePage: React.FC = () => {
     setViewMode(mode);
   };
 
-  // 認証状態に応じたボタンの表示
-  const renderAuthButtons = () => {
-    if (authLoading) {
-      return <div style={{ width: '80px', height: '32px', background: '#e5e7eb', borderRadius: '0.25rem', animation: 'pulse 2s infinite' }}></div>;
-    }
-
-    if (user) {
-      return (
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <span style={{ color: '#374151', fontSize: '0.875rem' }}>
-            {user.user_metadata?.full_name || user.email}さん
-          </span>
-          <Link href="/dashboard" className="cta-primary">
-            ダッシュボード
-          </Link>
-        </div>
-      );
-    }
-
-    return (
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <Link href="/auth/login" className="cta-secondary">
-          ログイン
-        </Link>
-        <Link href="/auth/register" className="cta-primary">
-          新規登録
-        </Link>
-      </div>
-    );
-  };
-
   return (
     <div>
       <Head>
@@ -1022,7 +990,7 @@ const HomePage: React.FC = () => {
       {/* ヘッダー */}
       <header className="header">
         <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center' ,gap: '2rem'}}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
             <Link href="/" passHref legacyBehavior>
               <a className="logo-container" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
                 <div className="logo">C</div>
@@ -1032,86 +1000,72 @@ const HomePage: React.FC = () => {
               </a>
             </Link>
             <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
-              {/* mypageあとで、ログイン後にのみ表示されるようにする */}
-              {isLoggedIn && (
-              <Link href="/mypage" passHref legacyBehavior>
-                <a className="cta-primary">マイページ</a>
-              </Link>
+            
+            {/* ヘッダー右側のコンテンツ */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {!isLoggedIn ? (
+                <>
+                  <Link href="/auth/login">
+                    <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      利用者ログイン
+                    </button>
+                  </Link>
+                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
+                  <Link href="/provider/login">
+                    <button className="cta-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      事業者ログイン
+                    </button>
+                  </Link>
+                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
+                </>
+              ) : (
+                <>
+                  <Link href="/mypage" passHref legacyBehavior>
+                    <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      マイページ
+                    </a>
+                  </Link>
+                  <button
+                    className="cta-secondary"
+                    style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    onClick={async () => {
+                      const { error } = await signOut();
+                      if (error) {
+                        console.error("ログアウトエラー:", error.message);
+                        alert("ログアウトに失敗しました");
+                      } else {
+                        alert("ログアウトしました");
+                      }
+                    }}
+                  >
+                    ログアウト
+                  </button>
+                </>
               )}
-              <button className="cta-primary">よくある質問/お問い合わせ</button>
+              <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                お問い合わせ
+              </button>
             </div>
           </div>
         </div>        
       </header>
 
-      {/* ヒーロー */}
-      <section className="cta-section" style={{ marginTop: '0', paddingTop: '1rem' }}>
-        {!isLoggedIn && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
-              <Link href="/auth/login">
-                <button className="cta-secondary">利用者用　新規登録/ログイン</button>
-              </Link>
-              <p className="cta-description" style={{ margin: 0 }}>
-                登録すると、ブックマーク機能やメッセージ機能を利用可能
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem', gap: '1rem', paddingLeft: '8rem' }}>
-              <Link href="/register">
-                <button className="cta-secondary">事業者用　新規申請/ログイン</button>
-              </Link>
-              <p className="cta-description" style={{ margin: 0 }}>
-                施設の空き情報などの編集はここから
-              </p>
-            </div>
-          </>
-        )}
-        {isLoggedIn && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
-            <p className="cta-description" style={{ margin: 0, fontSize: '1.125rem', fontWeight: '500' }}>
-              ようこそ、{user?.user_metadata?.full_name || user?.email}さん
-            </p>
-            <button
-              className="cta-secondary"
-              onClick={async () => {
-                const { error } = await signOut();
-                if (error) {
-                  console.error("ログアウトエラー:", error.message);
-                  alert("ログアウトに失敗しました");
-                } else {
-                  alert("ログアウトしました");
-                }
-              }}
-            >
-              ログアウト
-            </button>
-          </div>
-        )}
-      </section>
-
       {/* メインコンテンツ */}
       <main className="container">
-        {/* 統計情報 (false && で一旦無効化中)*/}
-        {false && !hasSearched && ( 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">🏢</div>
-              <div className="stat-number">1,200+</div>
-              <div className="stat-label">登録事業所</div>
+        {/* ログインユーザーへの挨拶（ヒーローセクション削除） */}
+        {isLoggedIn && (
+          <section style={{ marginTop: '2rem', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '2rem' }}>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '1.125rem', 
+                fontWeight: '500',
+                color: '#374151' 
+              }}>
+                ようこそ、{user?.user_metadata?.full_name || user?.email}さん
+              </p>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <div className="stat-number">5,000+</div>
-              <div className="stat-label">利用者登録</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">📈</div>
-              <div className="stat-number">98%</div>
-              <div className="stat-label">マッチング成功率</div>
-            </div>
-          </div> 
+          </section>
         )}
         
         {/* 検索セクション */}
@@ -1183,57 +1137,6 @@ const HomePage: React.FC = () => {
             onBookmarkToggle={handleBookmarkToggle}
             isBookmarked={(facilityId: number) => isBookmarked(facilityId.toString())}
           />
-        )}
-
-        {/* サービス案内（初回表示時のみ）現在無効化中 */}
-        {false && !hasSearched && (
-          <section className="services-section">
-            <h2 className="services-title">提供中のサービス</h2>
-            <div className="services-grid">
-              <div className="service-card">
-                <div className="service-name">居宅介護</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">生活介護</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労移行支援</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労継続支援A型</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労継続支援B型</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">放課後等デイサービス</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">児童発達支援</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">共同生活援助</div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* CTA セクション（初回表示時のみ（現在機能停止させてる））ç*/}
-        {false && !hasSearched && (
-          <section className="cta-section">
-            <h2 className="cta-title">アカウントを作成しませんか？</h2>
-            <p className="cta-description">
-              登録すると、ブックマーク機能やメッセージ機能をご利用いただけます。
-            </p>
-            <div className="cta-buttons">
-              <Link href="/auth/register?type=user" className="cta-primary">
-                利用者として登録
-              </Link>
-              <Link href="/auth/register?type=facility" className="cta-secondary">
-                事業所として登録
-              </Link>
-            </div>
-          </section>
         )}
       </main>
 
