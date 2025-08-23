@@ -1422,7 +1422,7 @@ const HomePage: React.FC = () => {
             padding: '4rem 2rem',
             color: '#6b7280'
           }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏥</div>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏢</div>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#374151' }}>
               東京都の障害福祉サービス事業所を検索
             </h3>
