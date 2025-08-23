@@ -806,33 +806,68 @@ const HomePage: React.FC = () => {
         />
       </Head>
 
-      {/* ヘッダー */}
-      <header className="header">
-        <div className="container">
-          <div className="logo-container">
-            <div className="logo">C</div>
+{/* ヘッダー */}
+<header className="header">
+  <div className="container">
+    <div style={{ display: 'flex', alignItems: 'center' ,gap: '2rem'}}>
+      <Link href="/" passHref legacyBehavior>
+        <a className="logo-container" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+          <div className="logo">C</div>
+          <div>
             <h1 className="main-title">ケアコネクト</h1>
           </div>
-        </div>
-      </header>
+        </a>
+      </Link>
+      <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+        <Link href="/mypage" passHref legacyBehavior>
+          <a className="cta-primary">マイページ</a>
+        </Link>
+        <button className="cta-primary">よくある質問/お問い合わせ</button>
+      </div>
+    </div>
+  </div>        
+</header>
 
-      {/* ヒーロー部分 */}
+{/* ヒーロー */}
+<section className="cta-section" style={{ marginTop: '0', paddingTop: '1rem' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' ,paddingLeft: '8rem'}}>
+    <Link href="/register">
+      <button className="cta-secondary">利用者用　新規登録/ログイン</button>
+    </Link>
+    <p className="cta-description" style={{ margin: 0 }}>
+      登録すると、ブックマーク機能やメッセージ機能を利用可能
+    </p>
+  </div>
+    <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem',gap: '1rem' ,paddingLeft: '8rem'}}>
+    <Link href="/register">
+      <button className="cta-secondary">事業者用　新規申請/ログイン</button>
+    </Link>
+    <p className="cta-description" style={{ margin: 0 }}>
+      施設の空き情報などの編集はここから
+    </p>
+  </div>
+</section>
+
+      {/* 
+      ヒーロー部分
       <section className="hero-section">
         <div className="container">
           <h1 className="hero-title">
-            東京都の障害福祉サービス<br />
-            <span className="hero-accent">事業所検索</span>
+        東京都の障害福祉サービス<br />
+        <span className="hero-accent">事業所検索</span>
           </h1>
           <p className="hero-description">
-            あなたにぴったりのケアサービスを見つけて、より良い生活をサポートします
+        あなたにぴったりのケアサービスを見つけよう
           </p>
         </div>
       </section>
-
+      */}
+      
       {/* メインコンテンツ */}
       <main className="container">
-        {/* 統計情報 */}
-        {!hasSearched && (
+        {/* 統計情報 (false && で一旦無効化中)*/}
+        {false && !hasSearched && ( 
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon">🏢</div>
@@ -849,9 +884,9 @@ const HomePage: React.FC = () => {
               <div className="stat-number">98%</div>
               <div className="stat-label">マッチング成功率</div>
             </div>
-          </div>
+          </div> 
         )}
-
+        
         {/* 検索セクション */}
         <SearchFilter onSearch={handleSearch} loading={loading} />
 
@@ -868,8 +903,8 @@ const HomePage: React.FC = () => {
           />
         )}
 
-        {/* サービス案内（初回表示時のみ） */}
-        {!hasSearched && (
+        {/* サービス案内（初回表示時のみ）現在無効化中 */}
+        {false && !hasSearched && (
           <section className="services-section">
             <h2 className="services-title">提供中のサービス</h2>
             <div className="services-grid">
@@ -901,8 +936,8 @@ const HomePage: React.FC = () => {
           </section>
         )}
 
-        {/* CTA セクション（初回表示時のみ） */}
-        {!hasSearched && (
+        {/* CTA セクション（初回表示時のみ（現在機能停止させてる）） */}
+        {false && !hasSearched && (
           <section className="cta-section">
             <h2 className="cta-title">アカウントを作成しませんか？</h2>
             <p className="cta-description">
@@ -922,10 +957,12 @@ const HomePage: React.FC = () => {
       <footer className="footer">
         <div className="container">
           <div className="footer-content">
-            <div className="footer-logo">
-              <div className="footer-logo-icon">🌟</div>
-              <span className="footer-name">ケアコネクト</span>
-            </div>
+            <Link href="/" passHref legacyBehavior>
+              <a className="footer-logo" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="footer-logo-icon">C</div>
+                <span className="footer-name">ケアコネクト</span>
+              </a>
+            </Link>
             <div className="footer-copyright">
               © 2025 ケアコネクト. All rights reserved.
             </div>

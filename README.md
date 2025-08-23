@@ -32,9 +32,9 @@
 ```
 .
 ├── components/             # UIコンポーネント
-│   ├── layout/             # 共通レイアウトコンポーネント
+│   ├── layout/             # 共通レイアウトコンポーネント(現在空)
 │   ├── search/             # 検索関連のコンポーネント (FacilityCard, SearchResultsなど)
-│   └── ui/                 # 汎用的なUI要素 (Button, Card, Inputなど)
+│   └── ui/                 # 汎用的なUI要素 (Button, Card, Inputなど（現在toggleswitchのみ）)
 ├── lib/                    # ユーティリティ関数や外部サービス連携ロジック
 │   ├── hooks/              # カスタムReactフック
 │   ├── supabase/           # Supabaseクライアントの初期化と関連ロジック (client.ts, server.ts)
@@ -46,6 +46,7 @@
 │   ├── index.tsx           # メインの事業所検索ページ
 │   └── search-test.tsx     # 検索機能のテスト用ページ
 ├── public/                 # 静的ファイル (画像など)
+├── scripts/                # supabaseへの接続、地区やサービスの設定、重複登録対策のユニークキー
 ├── styles/                 # グローバルスタイルやTailwind CSSの設定
 ├── wamnet.csv              # 事業所データ（CSV形式）
 ├── next.config.ts          # Next.jsの設定ファイル
