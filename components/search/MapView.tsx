@@ -1,42 +1,39 @@
-// components/search/MapView.tsx - 修正版
-import React, { useEffect, useMemo, useState } from 'react';
+// components/search/MapView.tsx - 完全修正版
+import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Leaflet関連のインポートを動的インポートの中で行う
-const DynamicMap = dynamic(
-  () => import('./MapViewInner'), 
-  {
-    ssr: false,
-    loading: () => (
-      <div className="map-loading" style={{
-        height: '600px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9fafb',
-        borderRadius: '0.75rem',
-        border: '1px solid #e5e7eb',
-        color: '#6b7280'
+// Leafletコンポーネントを動的インポート
+const DynamicMap = dynamic(() => import('./LeafletMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="map-loading" style={{
+      height: '600px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f9fafb',
+      borderRadius: '0.75rem',
+      border: '1px solid #e5e7eb',
+      color: '#6b7280'
+    }}>
+      <div style={{
+        fontSize: '2rem',
+        marginBottom: '1rem',
+        animation: 'spin 2s linear infinite'
       }}>
-        <div className="loading-spinner" style={{
-          fontSize: '2rem',
-          marginBottom: '1rem',
-          animation: 'spin 2s linear infinite'
-        }}>
-          🗺️
-        </div>
-        <p style={{ fontSize: '0.875rem' }}>地図を読み込み中...</p>
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        🗺️
       </div>
-    )
-  }
-);
+      <p style={{ fontSize: '0.875rem' }}>地図を読み込み中...</p>
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  )
+});
 
 // 型定義
 interface Service {
@@ -69,32 +66,36 @@ interface Facility {
   services?: Service[];
 }
 
-// メインMapViewコンポーネント
-const MapView: React.FC<{ 
+interface MapViewProps {
   facilities: Facility[];
   loading?: boolean;
-}> = ({ facilities, loading = false }) => {
+}
+
+const MapView: React.FC<MapViewProps> = ({ facilities, loading = false }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // 座標を持つ施設のみをフィルタリング
-  const validFacilities = useMemo(() => 
-    facilities.filter(f => f.latitude && f.longitude && 
-                        !isNaN(f.latitude) && !isNaN(f.longitude)),
-    [facilities]
-  );
+  // 有効な座標を持つ施設をフィルタリング
+  const validFacilities = facilities.filter(facility => {
+    return facility.latitude != null && 
+           facility.longitude != null && 
+           !isNaN(facility.latitude) && 
+           !isNaN(facility.longitude) &&
+           facility.latitude >= -90 && facility.latitude <= 90 &&
+           facility.longitude >= -180 && facility.longitude <= 180;
+  });
 
-  console.log('MapView レンダリング:', { 
-    facilities: facilities.length, 
-    validFacilities: validFacilities.length, 
+  console.log('MapView:', {
+    totalFacilities: facilities.length,
+    validFacilities: validFacilities.length,
     loading,
     isClient
   });
 
-  // クライアントサイドでない場合はローディングを表示
+  // クライアントサイドレンダリング前はローディング表示
   if (!isClient) {
     return (
       <div className="map-loading" style={{
@@ -114,10 +115,10 @@ const MapView: React.FC<{
     );
   }
 
-  return (
-    <div className="map-container" style={{ width: '100%', marginTop: '1rem' }}>
-      {/* 検索結果がない場合の表示 */}
-      {validFacilities.length === 0 && !loading && (
+  // 有効な施設がない場合
+  if (validFacilities.length === 0 && !loading) {
+    return (
+      <div className="map-container" style={{ width: '100%', marginTop: '1rem' }}>
         <div className="map-no-results" style={{
           textAlign: 'center',
           padding: '3rem',
@@ -126,16 +127,20 @@ const MapView: React.FC<{
           border: '1px solid #e5e7eb',
           marginBottom: '1rem'
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🗺️</div>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: '#374151', fontSize: '1.25rem' }}>
             地図に表示できる事業所がありません
           </h3>
           <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>
             位置情報が登録されている事業所を検索してください
           </p>
         </div>
-      )}
-      
+      </div>
+    );
+  }
+
+  return (
+    <div className="map-container" style={{ width: '100%', marginTop: '1rem' }}>
       {/* 動的に読み込まれる地図コンポーネント */}
       <DynamicMap facilities={validFacilities} loading={loading} />
       
@@ -151,7 +156,12 @@ const MapView: React.FC<{
           fontSize: '0.875rem',
           fontWeight: '500'
         }}>
-          <span>📍 {validFacilities.length}件の事業所を地図上に表示</span>
+          📍 {validFacilities.length}件の事業所を地図上に表示中
+          {facilities.length !== validFacilities.length && (
+            <span style={{ marginLeft: '0.5rem', color: '#6b7280' }}>
+              （{facilities.length - validFacilities.length}件は位置情報なし）
+            </span>
+          )}
         </div>
       )}
     </div>
