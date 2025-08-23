@@ -1,18 +1,10 @@
-// pages/auth/register.tsx （更新版）
-import React from 'react'
-import Head from 'next/head'
-import ImprovedRegisterForm from '@/components/auth/ImprovedRegisterForm'
+import { RegisterTypeSelector } from './RegisterTypeSelector'
 
-const RegisterPage: React.FC = () => {
+export default function RegisterPage() {
   return (
-    <>
-      <Head>
-        <title>新規登録 - ケアコネクト</title>
-        <meta name="description" content="ケアコネクトのアカウントを作成して、ブックマークやメッセージ機能をご利用ください" />
-      </Head>
-      <ImprovedRegisterForm />
-    </>
+    <div className="register-container">
+      <h1>新規登録</h1>
+      <RegisterTypeSelector />
+    </div>
   )
 }
-
-export default RegisterPage

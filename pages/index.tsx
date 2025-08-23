@@ -3,7 +3,7 @@
 import React, { useState, useEffect, MouseEvent } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useAuthContext } from '@/components/providers/AuthProvider';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 // 型定義（同じ）
 interface Service {
@@ -731,7 +731,7 @@ const SearchResults: React.FC<{
 
 // メインページ（globals.cssに合わせて調整）
 const HomePage: React.FC = () => {
-  const { user, loading: authLoading } = useAuthContext();
+  const { user, loading: authLoading } = useAuth();
   
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
@@ -968,24 +968,6 @@ const HomePage: React.FC = () => {
               <div className="service-card">
                 <div className="service-name">共同生活援助</div>
               </div>
-            </div>
-          </section>
-        )}
-
-        {/* CTA セクション（初回表示時のみ） */}
-        {!hasSearched && (
-          <section className="cta-section">
-            <h2 className="cta-title">アカウントを作成しませんか？</h2>
-            <p className="cta-description">
-              登録すると、ブックマーク機能やメッセージ機能をご利用いただけます。
-            </p>
-            <div className="cta-buttons">
-              <Link href="/auth/register?type=user" className="cta-primary">
-                利用者として登録
-              </Link>
-              <Link href="/auth/register?type=facility" className="cta-secondary">
-                事業所として登録
-              </Link>
             </div>
           </section>
         )}
