@@ -1,9 +1,11 @@
 // pages/index.tsx - ヘッダー内認証ボタン修正版
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router'; // 必要に応じて別行で
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
+import { supabase } from '@/lib/supabase/client'
 
 // 型定義
 interface Service {
@@ -187,17 +189,6 @@ const SearchFilterComponent: React.FC<{
             </button>
           </div>
 
-          <div className="filter-group">
-            <label className="filter-checkbox-container">
-              <input
-                type="checkbox"
-                className="filter-checkbox"
-                checked={availabilityOnly}
-                onChange={(e) => setAvailabilityOnly(e.target.checked)}
-              />
-              <span className="filter-checkbox-label">空きのある事業所のみ</span>
-            </label>
-          </div>
         </div>
 
         {/* サービス選択パネル */}
@@ -340,7 +331,21 @@ const SearchFilterComponent: React.FC<{
           </div>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'left', justifyContent: 'center', gap: '3rem', marginTop: '1.5rem' }}>
+          <label className="filter-checkbox-container">
+            <input
+              type="checkbox"
+              className="filter-checkbox"
+                style={{ 
+                width: '20px',      // 幅
+                height: '20px',     // 高さ
+                transform: 'scale(1.2)' // 全体的なスケール調整
+                }}
+              checked={availabilityOnly}
+              onChange={(e) => setAvailabilityOnly(e.target.checked)}
+            />
+            <span className="filter-checkbox-label" style={{ fontSize: '1.5rem', fontWeight: '500' }}>空きのある事務所のみ</span>
+          </label>
           <button
             type="submit"
             className="filter-search-button"
@@ -512,7 +517,7 @@ const FacilityCard: React.FC<{
                 padding: '0.25rem',
                 borderRadius: '0.25rem',
                 color: isBookmarked ? '#eab308' : '#9ca3af',
-                fontSize: '1.25rem',
+                fontSize: '1.5rem',
                 transition: 'all 0.2s'
               }}
               onMouseOver={(e) => {
@@ -528,6 +533,9 @@ const FacilityCard: React.FC<{
               title={isBookmarked ? 'ブックマークから削除' : 'ブックマークに追加'}
             >
               {isBookmarked ? '★' : '☆'}
+                <span style={{fontSize: '0.75rem', marginLeft: '0.25rem'}}>
+                {isBookmarked ? '保存済み' : '保存'}
+                </span>
             </button>
           )}
         </div>
@@ -558,7 +566,7 @@ const FacilityCard: React.FC<{
           <div className="services-list">
             {availableServices.slice(0, 3).map((service, index) => (
               <span key={index} className="service-tag available">
-                ○ {service.service?.name || 'サービス'}
+                ◯ {service.service?.name || 'サービス'}
               </span>
             ))}
             {unavailableServices.slice(0, 2).map((service, index) => (
@@ -799,110 +807,116 @@ const HomePage: React.FC = () => {
 
   const isLoggedIn = !!user;
 
+  // ブックマークのトグル処理（修正版）
+  const handleBookmarkToggle = async (facilityId: number) => {
+    if (!isLoggedIn) {
+      alert('ブックマーク機能を使用するにはログインが必要です。');
+      return;
+    }
+
+    try {
+      const facilityIdStr = facilityId.toString();
+      const isCurrentlyBookmarked = isBookmarked(facilityIdStr);
+      
+      // useBookmarksフックのtoggleBookmark関数を使用
+      await toggleBookmark(facilityIdStr);
+      
+      console.log(`${isCurrentlyBookmarked ? '削除' : '追加'}しました: ${facilityId}`);
+      
+      // ブックマークモード時は表示も更新
+      if (isBookmarkMode) {
+        // 少し待ってからブックマーク表示を更新
+        setTimeout(async () => {
+          await handleShowBookmarks();
+        }, 200);
+      }
+      
+    } catch (error) {
+      console.error('❌ ブックマーク操作エラー:', error);
+      alert('ブックマーク操作中にエラーが発生しました。');
+    }
+  };
+
   // ブックマーク表示処理（修正版）
   const handleShowBookmarks = async () => {
     if (!isLoggedIn) {
       alert('ブックマーク機能を使用するにはログインが必要です。');
       return;
     }
+    
+    const newBookmarkMode = !isBookmarkMode;
+    setIsBookmarkMode(newBookmarkMode);
 
-    setLoading(true);
-    setError(null);
-    setIsBookmarkMode(true);
-    setHasSearched(true);
-
-    try {
-      console.log('🔖 ブックマーク表示開始...');
+    if (newBookmarkMode) {
+      setLoading(true);
+      setError(null);
+      setHasSearched(true); 
+      console.log('📖 ブックマーク表示開始...');
       
-      // 最新のブックマーク情報を取得
-      await refreshBookmarks();
-      
-      // 少し待ってからブックマーク情報を処理
-      setTimeout(async () => {
-        console.log('現在のブックマーク:', bookmarks);
+      try {
+        // 最新のブックマーク情報を取得
+        await refreshBookmarks();
         
-        if (bookmarks.length === 0) {
-          console.log('ブックマークが0件');
-          setFacilities([]);
-          setPagination(null);
-          setLoading(false);
-          return;
-        }
-        
-        // ブックマークから事業所IDを取得
-        const bookmarkedFacilityIds = bookmarks.map(bookmark => parseInt(bookmark.facility));
-        console.log('ブックマーク事業所ID:', bookmarkedFacilityIds);
+        // 少し待ってからブックマーク情報を処理
+        setTimeout(async () => {
+          try {
+            console.log('現在のブックマーク:', bookmarks);
+            
+            if (bookmarks.length === 0) {
+              console.log('ブックマークが0件');
+              setFacilities([]);
+              setPagination(null);
+              setLoading(false);
+              return;
+            }
+            
+            // ブックマークから事業所IDを取得
+            const bookmarkedFacilityIds = bookmarks.map(bookmark => parseInt(bookmark.facility));
+            console.log('ブックマーク事業所ID:', bookmarkedFacilityIds);
 
-        try {
-          // facility_ids パラメータを使ってAPI呼び出し
-          const params = new URLSearchParams();
-          params.append('facility_ids', JSON.stringify(bookmarkedFacilityIds));
-          
-          console.log('API呼び出し開始...');
-          const response = await fetch(`/api/search/facilities?${params.toString()}`);
-          
-          if (!response.ok) {
-            throw new Error(`API エラー: ${response.status}`);
-          }
+            // facility_ids パラメータを使ってAPI呼び出し
+            const params = new URLSearchParams();
+            params.append('facility_ids', JSON.stringify(bookmarkedFacilityIds));
+            
+            console.log('API呼び出し開始...');
+            const response = await fetch(`/api/search/facilities?${params.toString()}`);
+            
+            if (!response.ok) {
+              throw new Error(`API エラー: ${response.status}`);
+            }
 
-          const data: SearchResponse = await response.json();
-          
-          console.log(`✅ 取得完了: ${data.facilities?.length || 0} 件`);
+            const data: SearchResponse = await response.json();
+            
+            console.log(`✅ 取得完了: ${data.facilities?.length || 0} 件`);
 
-          if (data.facilities && data.facilities.length > 0) {
-            setFacilities(data.facilities);
-            setPagination(data.pagination);
-          } else {
-            console.log('❌ ブックマークした事業所が見つかりません');
+            if (data.facilities && data.facilities.length > 0) {
+              setFacilities(data.facilities);
+              setPagination(data.pagination);
+            } else {
+              console.log('❌ ブックマークした事業所が見つかりません');
+              setFacilities([]);
+              setPagination(null);
+              setError('ブックマークした事業所が見つかりませんでした。削除された可能性があります。');
+            }
+            
+            setLoading(false);
+            
+          } catch (err) {
+            console.error('❌ 事業所取得エラー:', err);
+            setError(err instanceof Error ? err.message : 'ブックマークした事業所の取得に失敗しました');
             setFacilities([]);
             setPagination(null);
-            setError('ブックマークした事業所が見つかりませんでした。削除された可能性があります。');
+            setLoading(false);
           }
-          
-        } catch (err) {
-          console.error('❌ 事業所取得エラー:', err);
-          setError(err instanceof Error ? err.message : 'ブックマークした事業所の取得に失敗しました');
-          setFacilities([]);
-          setPagination(null);
-        }
+        }, 100);
         
+      } catch (err) {
+        console.error('❌ ブックマーク表示エラー:', err);
+        setError(err instanceof Error ? err.message : 'ブックマークの取得中にエラーが発生しました');
+        setFacilities([]);
+        setPagination(null);
         setLoading(false);
-      }, 100);
-      
-    } catch (err) {
-      console.error('❌ ブックマーク表示エラー:', err);
-      setError(err instanceof Error ? err.message : 'ブックマークの取得中にエラーが発生しました');
-      setFacilities([]);
-      setPagination(null);
-      setLoading(false);
-    }
-  };
-
-  // ブックマークトグル処理
-  const handleBookmarkToggle = async (facilityId: number) => {
-    console.log('🔖 ブックマークトグル開始');
-    console.log('  事業所ID:', facilityId, '(型:', typeof facilityId, ')');
-    
-    if (!isLoggedIn) {
-      alert('ブックマーク機能を使用するにはログインが必要です。');
-      return;
-    }
-
-    try {
-      console.log('  ユーザーID:', user?.id);
-      console.log('  送信する事業所ID:', facilityId.toString());
-      
-      await toggleBookmark(facilityId.toString());
-      
-      console.log('✅ ブックマーク操作完了');
-      
-      // ブックマークモード中に削除された場合は表示から除外
-      if (isBookmarkMode && !isBookmarked(facilityId.toString())) {
-        setFacilities(prev => prev.filter(f => f.id !== facilityId));
       }
-    } catch (error) {
-      console.error('❌ ブックマーク操作エラー:', error);
-      alert('ブックマーク操作に失敗しました。');
     }
   };
 
@@ -973,79 +987,69 @@ const HomePage: React.FC = () => {
         />
       </Head>
 
-{/* ヘッダー */}
-<header className="header">
-  <div className="container">
-    <div style={{ display: 'flex', alignItems: 'center' ,gap: '2rem'}}>
-      <Link href="/" passHref legacyBehavior>
-        <a className="logo-container" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-          <div className="logo">C</div>
-          <div>
-            <h1 className="main-title">ケアコネクト</h1>
+      {/* ヘッダー */}
+      <header className="header">
+        <div className="container">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <Link href="/" passHref legacyBehavior>
+              <a className="logo-container" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                <div className="logo">C</div>
+                <div>
+                  <h1 className="main-title">ケアコネクト</h1>
+                </div>
+              </a>
+            </Link>
+            <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
+            
+            {/* ヘッダー右側のコンテンツ */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {!isLoggedIn ? (
+                <>
+                  <Link href="/auth/login">
+                    <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      利用者ログイン
+                    </button>
+                  </Link>
+                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
+                  <Link href="/provider/login">
+                    <button className="cta-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      事業者ログイン
+                    </button>
+                  </Link>
+                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
+                </>
+              ) : (
+                <>
+                  <Link href="/mypage" passHref legacyBehavior>
+                    <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      マイページ
+                    </a>
+                  </Link>
+                  <button
+                    className="cta-secondary"
+                    style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                    onClick={async () => {
+                      const { error } = await signOut();
+                      if (error) {
+                        console.error("ログアウトエラー:", error.message);
+                        alert("ログアウトに失敗しました");
+                      } else {
+                        alert("ログアウトしました");
+                      }
+                    }}
+                  >
+                    ログアウト
+                  </button>
+                </>
+              )}
+              <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                お問い合わせ
+              </button>
+            </div>
           </div>
-        </a>
-      </Link>
-      <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
-      <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
-        {/* mypageあとで、ログイン後にのみ表示されるようにする */}
-        {isLoggedIn && (
-        <Link href="/mypage" passHref legacyBehavior>
-          <a className="cta-primary">マイページ</a>
-        </Link>
-        )}
-        <button className="cta-primary">よくある質問/お問い合わせ</button>
-      </div>
-    </div>
-  </div>        
-</header>
+        </div>        
+      </header>
 
-{/* ヒーロー */}
-<section className="cta-section" style={{ marginTop: '0', paddingTop: '1rem' }}>
-  {!isLoggedIn && (
-    <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
-        <Link href="/auth/login">
-          <button className="cta-secondary">利用者用　新規登録/ログイン</button>
-        </Link>
-        <p className="cta-description" style={{ margin: 0 }}>
-          登録すると、ブックマーク機能やメッセージ機能を利用可能
-        </p>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem', gap: '1rem', paddingLeft: '8rem' }}>
-        <Link href="/register">
-          <button className="cta-secondary">事業者用　新規申請/ログイン</button>
-        </Link>
-        <p className="cta-description" style={{ margin: 0 }}>
-          施設の空き情報などの編集はここから
-        </p>
-      </div>
-    </>
-  )}
-{isLoggedIn && (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
-    <p className="cta-description" style={{ margin: 0, fontSize: '1.125rem', fontWeight: '500' }}>
-      ようこそ、{user?.user_metadata?.full_name || user?.email}さん
-    </p>
-    <button
-      className="cta-secondary"
-      onClick={async () => {
-        const { error } = await signOut();
-        if (error) {
-          console.error("ログアウトエラー:", error.message);
-          alert("ログアウトに失敗しました");
-        } else {
-          alert("ログアウトしました");
-        }
-      }}
-    >
-      ログアウト
-    </button>
-  </div>
-)}
-
-</section>
-      
       {/* メインコンテンツ */}
       <main className="container">
         {/* ログインユーザーへの挨拶（ヒーローセクション削除） */}
@@ -1085,11 +1089,11 @@ const HomePage: React.FC = () => {
                   border: 'none',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  background: isBookmarkMode ? '#eab308' : '#f3f4f6',
+                  background: isBookmarkMode ?'#22c55e':'#eab308',
                   color: isBookmarkMode ? 'white' : '#374151'
                 }}
               >
-                {isBookmarkMode ? '★' : '☆'} {isBookmarkMode ? 'ブックマーク表示中' : 'ブックマーク'}
+                {isBookmarkMode ? '★' : '☆'} {isBookmarkMode ? '全体検索に戻る' : 'ブックマークを表示する'}
               </button>
             )}
           </div>
@@ -1104,7 +1108,7 @@ const HomePage: React.FC = () => {
               borderRadius: '0.5rem' 
             }}>
               <p style={{ fontSize: '0.875rem', color: '#92400e', margin: 0 }}>
-                📌 ブックマークした事業所を表示しています。通常の検索に戻るには下の「通常検索に戻る」ボタンを押してください。
+                📌 ブックマークした事業所を表示しています
               </p>
             </div>
           )}
@@ -1113,17 +1117,7 @@ const HomePage: React.FC = () => {
             <SearchFilterComponent onSearch={handleSearch} loading={loading} />
           ) : (
             <div style={{ textAlign: 'center' }}>
-              <button 
-                onClick={() => {
-                  setIsBookmarkMode(false);
-                  setHasSearched(false);
-                  setFacilities([]);
-                  setPagination(null);
-                }}
-                className="filter-search-button"
-              >
-                通常検索に戻る
-              </button>
+
             </div>
           )}
         </div>
@@ -1143,57 +1137,6 @@ const HomePage: React.FC = () => {
             onBookmarkToggle={handleBookmarkToggle}
             isBookmarked={(facilityId: number) => isBookmarked(facilityId.toString())}
           />
-        )}
-
-        {/* サービス案内（初回表示時のみ）現在無効化中 */}
-        {false && !hasSearched && (
-          <section className="services-section">
-            <h2 className="services-title">提供中のサービス</h2>
-            <div className="services-grid">
-              <div className="service-card">
-                <div className="service-name">居宅介護</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">生活介護</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労移行支援</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労継続支援A型</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">就労継続支援B型</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">放課後等デイサービス</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">児童発達支援</div>
-              </div>
-              <div className="service-card">
-                <div className="service-name">共同生活援助</div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* CTA セクション（初回表示時のみ（現在機能停止させてる）） */}
-        {false && !hasSearched && (
-          <section className="cta-section">
-            <h2 className="cta-title">アカウントを作成しませんか？</h2>
-            <p className="cta-description">
-              登録すると、ブックマーク機能やメッセージ機能をご利用いただけます。
-            </p>
-            <div className="cta-buttons">
-              <Link href="/auth/register?type=user" className="cta-primary">
-                利用者として登録
-              </Link>
-              <Link href="/auth/register?type=facility" className="cta-secondary">
-                事業所として登録
-              </Link>
-            </div>
-          </section>
         )}
       </main>
 
