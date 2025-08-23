@@ -1022,9 +1022,11 @@ const FacilityCard: React.FC<{
         </div>
 
         <div className="facility-actions">
-          <button className="details-button">
-            詳細を見る
-          </button>
+          <Link href={`/facilities/${facility.id}`} passHref legacyBehavior>
+            <a className="details-button" style={{ textDecoration: 'none' }}>
+              詳細を見る
+            </a>
+          </Link>
         </div>
       </div>
     </div>
