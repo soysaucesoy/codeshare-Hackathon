@@ -1434,10 +1434,10 @@ const HomePage: React.FC = () => {
               ) : (
                 <>
                   <Link href="/mypage" passHref legacyBehavior>
-                    <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                      マイページ
-                    </a>
-                  </Link>
+  <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+    マイページ
+  </a>
+</Link>
                   <button
                     className="cta-secondary"
                     style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
