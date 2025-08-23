@@ -1,4 +1,4 @@
-// pages/facilities/[id].tsx - 事業所詳細ページ
+// pages/facilities/[id].tsx - 検索状態復元機能付き事業所詳細ページ
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -197,10 +197,10 @@ const InfoCard: React.FC<{
   </div>
 );
 
-// 事業所詳細ページコンポーネント
+// 事業所詳細ページコンポーネント（検索状態復元機能付き）
 const FacilityDetailPage: React.FC = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, ...searchParams } = router.query;
   const { user } = useAuthContext();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   
@@ -211,33 +211,70 @@ const FacilityDetailPage: React.FC = () => {
 
   const isLoggedIn = !!user;
 
+  // 検索に戻るためのURL構築
+  const getBackToSearchUrl = () => {
+    // URLパラメータから検索条件を取得
+    const params = new URLSearchParams();
+    
+    const getString = (value: string | string[] | undefined): string => {
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value[0] || '';
+      return '';
+    };
+    
+    // 検索条件をURLパラメータから復元
+    if (searchParams.q) {
+      const value = getString(searchParams.q);
+      if (value) params.append('q', value);
+    }
+    if (searchParams.district) {
+      const value = getString(searchParams.district);
+      if (value) params.append('district', value);
+    }
+    if (searchParams.services) {
+      const value = getString(searchParams.services);
+      if (value) params.append('services', value);
+    }
+    if (searchParams.available) {
+      const value = getString(searchParams.available);
+      if (value) params.append('available', value);
+    }
+    if (searchParams.page) {
+      const value = getString(searchParams.page);
+      if (value) params.append('page', value);
+    }
+    if (searchParams.view) {
+      const value = getString(searchParams.view);
+      if (value) params.append('view', value);
+    }
+
+    const queryString = params.toString();
+    const backUrl = queryString ? `/?${queryString}` : '/';
+    
+    return backUrl;
+  };
+
   // データ取得
   useEffect(() => {
-    console.log('🔍 詳細ページが読み込まれました。ID:', id);
-    
     if (!id || Array.isArray(id)) {
-      console.log('❌ 無効なID:', id);
       return;
     }
 
     const fetchFacility = async () => {
-      console.log('📡 事業所データの取得を開始:', id);
       setLoading(true);
       setError(null);
 
       try {
         const response = await fetch(`/api/facilities/${id}`);
-        console.log('📡 API レスポンス状態:', response.status, response.statusText);
         
         if (!response.ok) {
           throw new Error('事業所情報の取得に失敗しました');
         }
 
         const data = await response.json();
-        console.log('✅ 事業所データ取得成功:', data);
         setFacility(data);
       } catch (err) {
-        console.error('❌ 事業所詳細取得エラー:', err);
+        console.error('事業所詳細取得エラー:', err);
         setError(err instanceof Error ? err.message : '事業所情報の取得中にエラーが発生しました');
       } finally {
         setLoading(false);
@@ -312,7 +349,7 @@ const FacilityDetailPage: React.FC = () => {
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</div>
             <h2>事業所が見つかりません</h2>
             <p className="error-message">{error || '指定された事業所は存在しないか、削除された可能性があります。'}</p>
-            <Link href="/">
+            <Link href={getBackToSearchUrl()}>
               <button className="cta-primary" style={{ marginTop: '1rem' }}>
                 検索ページに戻る
               </button>
@@ -325,6 +362,9 @@ const FacilityDetailPage: React.FC = () => {
 
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
+
+  // 検索状態がある場合の判定
+  const hasSearchParams = Object.keys(searchParams).length > 0;
 
   return (
     <div>
@@ -343,7 +383,7 @@ const FacilityDetailPage: React.FC = () => {
             </Link>
             
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/">
+              <Link href={getBackToSearchUrl()}>
                 <button className="cta-secondary" style={{ 
                   fontSize: '0.875rem', 
                   padding: '0.5rem 1rem',
@@ -352,7 +392,7 @@ const FacilityDetailPage: React.FC = () => {
                   gap: '0.5rem'
                 }}>
                   <ArrowLeft size={16} />
-                  検索に戻る
+                  {hasSearchParams ? '検索結果に戻る' : '検索に戻る'}
                 </button>
               </Link>
             </div>
@@ -364,7 +404,9 @@ const FacilityDetailPage: React.FC = () => {
       <main className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
         {/* パンくずリスト */}
         <nav style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-          <Link href="/" style={{ color: '#22c55e', textDecoration: 'none' }}>ホーム</Link>
+          <Link href={getBackToSearchUrl()} style={{ color: '#22c55e', textDecoration: 'none' }}>
+            {hasSearchParams ? '検索結果' : 'ホーム'}
+          </Link>
           <span style={{ margin: '0 0.5rem' }}>/</span>
           <span>事業所詳細</span>
           <span style={{ margin: '0 0.5rem' }}>/</span>

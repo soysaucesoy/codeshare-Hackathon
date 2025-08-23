@@ -1,4 +1,4 @@
-// pages/index.tsx - サービス検索機能拡張版（地図機能追加・動的インポート対応）
+// pages/index.tsx - 検索状態復元機能付きサービス検索
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -6,7 +6,6 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
-import { supabase } from '@/lib/supabase/client';
 
 // 地図コンポーネントを動的インポート（SSR対応）
 const MapView = dynamic(() => import('../components/search/MapView'), {
@@ -168,6 +167,35 @@ interface SearchFilters {
   availabilityOnly: boolean;
 }
 
+// URLパラメータエンコード/デコード関数
+const encodeSearchFilters = (filters: SearchFilters): Record<string, string> => {
+  const params: Record<string, string> = {};
+  
+  if (filters.query) params.q = filters.query;
+  if (filters.district) params.district = filters.district;
+  if (filters.serviceIds.length > 0) params.services = filters.serviceIds.join(',');
+  if (filters.availabilityOnly) params.available = '1';
+  
+  return params;
+};
+
+const decodeSearchFilters = (query: Record<string, string | string[] | undefined>): SearchFilters => {
+  const getString = (value: string | string[] | undefined): string => {
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) return value[0] || '';
+    return '';
+  };
+
+  return {
+    query: getString(query.q),
+    district: getString(query.district),
+    serviceIds: query.services 
+      ? getString(query.services).split(',').map(id => parseInt(id)).filter(id => !isNaN(id))
+      : [],
+    availabilityOnly: getString(query.available) === '1'
+  };
+};
+
 // サービスカテゴリ
 const SERVICE_CATEGORIES = {
   '訪問系サービス': [
@@ -197,16 +225,31 @@ const SERVICE_CATEGORIES = {
   ],
 };
 
-// SearchFilterコンポーネント
+// SearchFilterコンポーネント（検索状態復元対応）
 const SearchFilterComponent: React.FC<{
   onSearch: (filters: SearchFilters) => void;
   loading?: boolean;
-}> = ({ onSearch, loading = false }) => {
-  const [query, setQuery] = useState('');
-  const [district, setDistrict] = useState('');
-  const [selectedServices, setSelectedServices] = useState<number[]>([]);
-  const [availabilityOnly, setAvailabilityOnly] = useState(false);
+  initialFilters?: SearchFilters;
+}> = ({ onSearch, loading = false, initialFilters }) => {
+  const [query, setQuery] = useState(initialFilters?.query || '');
+  const [district, setDistrict] = useState(initialFilters?.district || '');
+  const [selectedServices, setSelectedServices] = useState<number[]>(initialFilters?.serviceIds || []);
+  const [availabilityOnly, setAvailabilityOnly] = useState(initialFilters?.availabilityOnly || false);
   const [showServiceFilter, setShowServiceFilter] = useState(false);
+
+  // 初期値が設定された場合の処理
+  useEffect(() => {
+    if (initialFilters) {
+      setQuery(initialFilters.query);
+      setDistrict(initialFilters.district);
+      setSelectedServices(initialFilters.serviceIds);
+      setAvailabilityOnly(initialFilters.availabilityOnly);
+      // サービス選択がある場合は展開表示
+      if (initialFilters.serviceIds.length > 0) {
+        setShowServiceFilter(true);
+      }
+    }
+  }, [initialFilters]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,7 +273,7 @@ const SearchFilterComponent: React.FC<{
     setSelectedServices([]);
   };
 
-  // 東京都の全市区町村リスト（拡張版）
+  // 東京都の全市区町村リスト
   const districts = [
     // 特別区（23区）
     '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区',
@@ -327,7 +370,6 @@ const SearchFilterComponent: React.FC<{
               </span>
             </button>
           </div>
-
         </div>
 
         {/* サービス選択パネル */}
@@ -475,11 +517,11 @@ const SearchFilterComponent: React.FC<{
             <input
               type="checkbox"
               className="filter-checkbox"
-                style={{ 
+              style={{ 
                 width: '20px',      
                 height: '20px',     
                 transform: 'scale(1.2)' 
-                }}
+              }}
               checked={availabilityOnly}
               onChange={(e) => setAvailabilityOnly(e.target.checked)}
             />
@@ -495,299 +537,6 @@ const SearchFilterComponent: React.FC<{
         </div>
       </div>
     </form>
-  );
-};
-
-// 地図コンポーネント（復活版・動的インポート対応）
-const MapViewInner: React.FC<{
-  facilities: Facility[];
-  onFacilitySelect?: (facility: Facility) => void;
-}> = ({ facilities, onFacilitySelect }) => {
-  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
-  const [mapError, setMapError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 地図の初期化（実際の地図ライブラリを使用する場合）
-    setMapError(null);
-  }, [facilities]);
-
-  const handleFacilityClick = (facility: Facility) => {
-    setSelectedFacility(facility);
-    if (onFacilitySelect) {
-      onFacilitySelect(facility);
-    }
-  };
-
-  // 座標を持つ事業所のみをフィルタ
-  const facilitiesWithLocation = facilities.filter(f => f.latitude && f.longitude);
-
-  if (mapError) {
-    return (
-      <div style={{
-        height: '600px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        background: '#f9fafb',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0.5rem'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</div>
-        <h3>地図の読み込みに失敗しました</h3>
-        <p style={{ color: '#6b7280' }}>{mapError}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="map-container" style={{ height: '600px', position: 'relative' }}>
-      {/* 地図エリア */}
-      <div style={{
-        height: '100%',
-        background: `linear-gradient(45deg, #e8f5e8 25%, transparent 25%), 
-                     linear-gradient(-45deg, #e8f5e8 25%, transparent 25%), 
-                     linear-gradient(45deg, transparent 75%, #e8f5e8 75%), 
-                     linear-gradient(-45deg, transparent 75%, #e8f5e8 75%)`,
-        backgroundSize: '20px 20px',
-        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-        border: '2px solid #22c55e',
-        borderRadius: '0.5rem',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* 地図のヘッダー */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '1rem',
-          zIndex: 10,
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ fontSize: '1.5rem' }}>🗺️</div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>東京都地図</h3>
-            </div>
-            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-              📍 {facilitiesWithLocation.length}/{facilities.length} 件に位置情報あり
-            </div>
-          </div>
-        </div>
-
-        {/* 事業所マーカー（簡易表示） */}
-        <div style={{ paddingTop: '4rem', height: '100%', position: 'relative' }}>
-          {/* 東京都の区域表示 */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '400px',
-            height: '300px',
-            background: '#dcfce7',
-            borderRadius: '20% 80% 60% 40%',
-            opacity: 0.3,
-            zIndex: 1
-          }} />
-
-          {/* 簡易マーカー表示 */}
-          {facilitiesWithLocation.slice(0, 20).map((facility, index) => {
-            const offsetX = (index % 5) * 80 - 160;
-            const offsetY = Math.floor(index / 5) * 60 - 120;
-            
-            return (
-              <div
-                key={facility.id}
-                onClick={() => handleFacilityClick(facility)}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(${offsetX}px, ${offsetY}px)`,
-                  zIndex: selectedFacility?.id === facility.id ? 20 : 10,
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{
-                  width: '30px',
-                  height: '30px',
-                  background: selectedFacility?.id === facility.id ? '#ef4444' : '#22c55e',
-                  borderRadius: '50% 50% 50% 0',
-                  transform: 'rotate(-45deg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid white',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                  transition: 'all 0.2s'
-                }}>
-                  <div style={{
-                    color: 'white',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                    transform: 'rotate(45deg)'
-                  }}>
-                    🏢
-                  </div>
-                </div>
-                
-                {/* マーカーラベル */}
-                <div style={{
-                  position: 'absolute',
-                  top: '35px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '500',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  maxWidth: '120px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {facility.name.length > 10 ? `${facility.name.slice(0, 10)}...` : facility.name}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* 範囲外の事業所数表示 */}
-          {facilitiesWithLocation.length > 20 && (
-            <div style={{
-              position: 'absolute',
-              bottom: '1rem',
-              right: '1rem',
-              background: 'rgba(34, 197, 94, 0.9)',
-              color: 'white',
-              padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}>
-              +{facilitiesWithLocation.length - 20}件の事業所
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 選択された事業所の詳細パネル */}
-      {selectedFacility && (
-        <div style={{
-          position: 'absolute',
-          bottom: '1rem',
-          left: '1rem',
-          width: '300px',
-          background: 'white',
-          border: '1px solid #e5e7eb',
-          borderRadius: '0.5rem',
-          padding: '1rem',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          zIndex: 30
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-            <h4 style={{ margin: 0, fontSize: '0.975rem', fontWeight: '600' }}>
-              {selectedFacility.name}
-            </h4>
-            <button
-              onClick={() => setSelectedFacility(null)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                color: '#6b7280'
-              }}
-            >
-              ×
-            </button>
-          </div>
-          
-          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
-            📍 {selectedFacility.district}
-          </p>
-          
-          {selectedFacility.description && (
-            <p style={{ 
-              margin: '0 0 0.75rem 0', 
-              fontSize: '0.75rem', 
-              color: '#374151',
-              lineHeight: 1.4
-            }}>
-              {selectedFacility.description.length > 80 
-                ? `${selectedFacility.description.slice(0, 80)}...` 
-                : selectedFacility.description}
-            </p>
-          )}
-          
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={() => {
-                console.log('詳細表示:', selectedFacility.id);
-              }}
-              style={{
-                flex: 1,
-                padding: '0.5rem',
-                background: '#22c55e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.25rem',
-                fontSize: '0.75rem',
-                cursor: 'pointer'
-              }}
-            >
-              詳細を見る
-            </button>
-            <button
-              onClick={() => {
-                if (selectedFacility.phone_number) {
-                  window.location.href = `tel:${selectedFacility.phone_number}`;
-                }
-              }}
-              disabled={!selectedFacility.phone_number}
-              style={{
-                flex: 1,
-                padding: '0.5rem',
-                background: selectedFacility.phone_number ? '#3b82f6' : '#9ca3af',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.25rem',
-                fontSize: '0.75rem',
-                cursor: selectedFacility.phone_number ? 'pointer' : 'not-allowed'
-              }}
-            >
-              📞 電話
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 地図の統計情報 */}
-      <div style={{
-        position: 'absolute',
-        top: '1rem',
-        right: '1rem',
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '0.75rem 1rem',
-        borderRadius: '0.5rem',
-        border: '1px solid #e5e7eb',
-        fontSize: '0.875rem',
-        zIndex: 10
-      }}>
-        <div style={{ marginBottom: '0.25rem' }}>
-          📊 <strong>{facilities.length}件</strong> の事業所
-        </div>
-        <div style={{ color: '#6b7280' }}>
-          🎯 位置情報: {facilitiesWithLocation.length}件
-        </div>
-      </div>
-    </div>
   );
 };
 
@@ -907,15 +656,19 @@ const Pagination: React.FC<{
   );
 };
 
-// ブックマーク機能付きFacilityCardコンポーネント
+// ブックマーク機能付きFacilityCardコンポーネント（検索状態保持対応）
 const FacilityCard: React.FC<{ 
   facility: Facility;
   isLoggedIn: boolean;
   isBookmarked: boolean;
   onBookmarkToggle: (facilityId: number) => void;
-}> = ({ facility, isLoggedIn, isBookmarked, onBookmarkToggle }) => {
+  searchParams?: string;
+}> = ({ facility, isLoggedIn, isBookmarked, onBookmarkToggle, searchParams = '' }) => {
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
+  
+  // 詳細ページのURLに検索パラメータを付加
+  const detailUrl = `/facilities/${facility.id}${searchParams ? `?${searchParams}` : ''}`;
   
   return (
     <div className="facility-card">
@@ -956,9 +709,9 @@ const FacilityCard: React.FC<{
               title={isBookmarked ? 'ブックマークから削除' : 'ブックマークに追加'}
             >
               {isBookmarked ? '★' : '☆'}
-                <span style={{fontSize: '0.75rem', marginLeft: '0.25rem'}}>
+              <span style={{fontSize: '0.75rem', marginLeft: '0.25rem'}}>
                 {isBookmarked ? '保存済み' : '保存'}
-                </span>
+              </span>
             </button>
           )}
         </div>
@@ -1022,7 +775,7 @@ const FacilityCard: React.FC<{
         </div>
 
         <div className="facility-actions">
-          <Link href={`/facilities/${facility.id}`} passHref legacyBehavior>
+          <Link href={detailUrl} passHref legacyBehavior>
             <a className="details-button" style={{ textDecoration: 'none' }}>
               詳細を見る
             </a>
@@ -1033,7 +786,7 @@ const FacilityCard: React.FC<{
   );
 };
 
-// SearchResultsコンポーネント（地図機能復活版・Toggle Switch対応）
+// SearchResultsコンポーネント（検索状態保持対応）
 const SearchResults: React.FC<{
   facilities: Facility[];
   pagination: SearchResponse['pagination'] | null;
@@ -1046,6 +799,7 @@ const SearchResults: React.FC<{
   isLoggedIn: boolean;
   onBookmarkToggle: (facilityId: number) => void;
   isBookmarked: (facilityId: number) => boolean;
+  searchParams?: string;
 }> = ({ 
   facilities, 
   pagination, 
@@ -1057,8 +811,41 @@ const SearchResults: React.FC<{
   isBookmarkMode,
   isLoggedIn,
   onBookmarkToggle,
-  isBookmarked
+  isBookmarked,
+  searchParams = ''
 }) => {
+  const router = useRouter();
+  
+  // 現在のURLから直接検索パラメータを取得
+  const getCurrentSearchParams = (): string => {
+    if (isBookmarkMode) return '';
+    
+    // router.queryから直接パラメータを構築
+    const params = new URLSearchParams();
+    
+    const addParam = (key: string, queryKey: keyof typeof router.query) => {
+      const value = router.query[queryKey];
+      if (typeof value === 'string' && value) {
+        params.append(key, value);
+      } else if (Array.isArray(value) && value.length > 0 && value[0]) {
+        params.append(key, value[0]);
+      }
+    };
+    
+    addParam('q', 'q');
+    addParam('district', 'district'); 
+    addParam('services', 'services');
+    addParam('available', 'available');
+    if (router.query.page && router.query.page !== '1') {
+      addParam('page', 'page');
+    }
+    addParam('view', 'view');
+    
+    return params.toString();
+  };
+
+  const currentSearchParams = getCurrentSearchParams();
+
   // リストビューの場合のみloading判定を適用
   if (loading && viewMode === 'list') {
     return (
@@ -1152,6 +939,7 @@ const SearchResults: React.FC<{
                     isLoggedIn={isLoggedIn}
                     isBookmarked={isBookmarked(facility.id)}
                     onBookmarkToggle={onBookmarkToggle}
+                    searchParams={currentSearchParams}
                   />
                 ))}
               </div>
@@ -1195,21 +983,58 @@ const SearchResults: React.FC<{
   );
 };
 
-// メインページ
+// メインページ（検索状態復元機能付き）
 const HomePage: React.FC = () => {
+  const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuthContext();
   const { bookmarks, refreshBookmarks, isBookmarked, toggleBookmark } = useBookmarks();
   
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // 初期状態はfalse
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [isBookmarkMode, setIsBookmarkMode] = useState(false);
   const [lastSearchFilters, setLastSearchFilters] = useState<SearchFilters | null>(null);
+  const [initialFilters, setInitialFilters] = useState<SearchFilters | undefined>(undefined);
+  const [searchParamsString, setSearchParamsString] = useState('');
+  const [preservedSearchParams, setPreservedSearchParams] = useState(''); // 検索状態を保持
 
   const isLoggedIn = !!user;
+
+  // URLパラメータから検索条件を復元
+  useEffect(() => {
+    if (router.isReady) {
+      // URLに検索パラメータがある場合のみ復元処理を実行
+      const hasSearchParams = Object.keys(router.query).some(key => 
+        ['q', 'district', 'services', 'available', 'page'].includes(key)
+      );
+      
+      if (hasSearchParams) {
+        const filters = decodeSearchFilters(router.query);
+        console.log('🔄 URLから検索条件を復元:', filters);
+        
+        setInitialFilters(filters);
+        setLastSearchFilters(filters);
+        setHasSearched(true);
+        
+        // 自動検索実行（URL更新なし）
+        executeSearchWithoutUrlUpdate(filters, 1);
+      } else if (!hasSearched && !isBookmarkMode) {
+        // URLにパラメータがなく、まだ検索していない場合は初期状態を設定
+        console.log('📋 初期画面を表示');
+        setInitialFilters(undefined);
+        setLastSearchFilters(null);
+        setHasSearched(false);
+        setLoading(false);
+        setFacilities([]);
+        setPagination(null);
+        setError(null);
+        setSearchParamsString('');
+      }
+    }
+  }, [router.isReady]);
 
   const handleBookmarkToggle = async (facilityId: number) => {
     if (!isLoggedIn) {
@@ -1251,6 +1076,9 @@ const HomePage: React.FC = () => {
       setError(null);
       setHasSearched(true); 
       console.log('📖 ブックマーク表示開始...');
+      
+      // URLからクエリパラメータを削除（但しsearchParamsStringは保持）
+      router.replace('/', undefined, { shallow: true });
       
       try {
         await refreshBookmarks();
@@ -1312,15 +1140,46 @@ const HomePage: React.FC = () => {
         setPagination(null);
         setLoading(false);
       }
+    } else {
+      // ブックマークモードを終了する場合、最後の検索条件があれば復元
+      console.log('🔄 ブックマークモード終了、検索状態を復元:', { lastSearchFilters, searchParamsString });
+      if (lastSearchFilters) {
+        await executeSearch(lastSearchFilters, 1);
+      }
     }
   };
 
-  // 通常検索処理（地図・リスト表示対応）
+  // 通常検索処理（URL更新対応）
   const executeSearch = async (
     filters: SearchFilters, 
     page: number = 1,
     forceViewMode?: 'list' | 'map'
   ) => {
+    await executeSearchWithoutUrlUpdate(filters, page, forceViewMode);
+    
+    // URLパラメータを更新（検索条件を保持）
+    const urlParams = encodeSearchFilters(filters);
+    if (page > 1) {
+      urlParams.page = page.toString();
+    }
+    
+    const queryString = new URLSearchParams(urlParams).toString();
+    console.log('🔗 URL更新:', queryString);
+    setSearchParamsString(queryString);
+    setPreservedSearchParams(queryString); // 検索パラメータを保持
+    
+    // URLを更新（ブラウザ履歴に追加せずに）
+    const newUrl = queryString ? `/?${queryString}` : '/';
+    router.replace(newUrl, undefined, { shallow: true });
+  };
+
+  // URL更新なしの検索処理
+  const executeSearchWithoutUrlUpdate = async (
+    filters: SearchFilters, 
+    page: number = 1,
+    forceViewMode?: 'list' | 'map'
+  ) => {
+    console.log('🔍 executeSearchWithoutUrlUpdate 開始:', { filters, page, forceViewMode });
     setLoading(true);
     setError(null);
     setIsBookmarkMode(false);
@@ -1344,7 +1203,7 @@ const HomePage: React.FC = () => {
         params.append('limit', '12');
       }
 
-      console.log('検索実行:', { ...filters, page, viewMode: currentViewMode });
+      console.log('📡 API呼び出し:', params.toString());
 
       const response = await fetch(`/api/search/facilities?${params.toString()}`);
       const data: SearchResponse = await response.json();
@@ -1353,9 +1212,12 @@ const HomePage: React.FC = () => {
         throw new Error('検索に失敗しました');
       }
 
+      console.log('✅ API応答:', { facilitiesCount: data.facilities?.length, pagination: data.pagination });
+
       setFacilities(data.facilities || []);
       // 地図表示の場合はページネーション情報をクリア
       setPagination(currentViewMode === 'map' ? null : data.pagination);
+      
     } catch (err) {
       console.error('検索エラー:', err);
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
@@ -1367,6 +1229,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleSearch = async (filters: SearchFilters) => {
+    console.log('🔍 新しい検索を実行:', filters);
     setHasSearched(true);
     setLastSearchFilters(filters);
     await executeSearch(filters, 1);
@@ -1374,6 +1237,7 @@ const HomePage: React.FC = () => {
 
   const handlePageChange = async (page: number) => {
     if (!lastSearchFilters) return;
+    console.log('📄 ページ変更:', page, 'filters:', lastSearchFilters);
     await executeSearch(lastSearchFilters, page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1436,10 +1300,10 @@ const HomePage: React.FC = () => {
               ) : (
                 <>
                   <Link href="/mypage" passHref legacyBehavior>
-  <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-    マイページ
-  </a>
-</Link>
+                    <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+                      マイページ
+                    </a>
+                  </Link>
                   <button
                     className="cta-secondary"
                     style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
@@ -1525,7 +1389,11 @@ const HomePage: React.FC = () => {
           )}
 
           {!isBookmarkMode && (
-            <SearchFilterComponent onSearch={handleSearch} loading={loading} />
+            <SearchFilterComponent 
+              onSearch={handleSearch} 
+              loading={loading}
+              initialFilters={initialFilters}
+            />
           )}
         </div>
 
@@ -1544,6 +1412,38 @@ const HomePage: React.FC = () => {
             onBookmarkToggle={handleBookmarkToggle}
             isBookmarked={(facilityId: number) => isBookmarked(facilityId.toString())}
           />
+        )}
+
+        {/* 初期画面のウェルカムメッセージ */}
+        {!hasSearched && !loading && (
+          <div style={{
+            textAlign: 'center',
+            padding: '4rem 2rem',
+            color: '#6b7280'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏥</div>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#374151' }}>
+              東京都の障害福祉サービス事業所を検索
+            </h3>
+            <p style={{ fontSize: '1rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+              上記の検索条件を設定して「検索」ボタンをクリックしてください。<br />
+              お住まいの地域や必要なサービスから、最適な事業所を見つけることができます。
+            </p>
+            {isLoggedIn && (
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #22c55e',
+                borderRadius: '0.5rem',
+                display: 'inline-block'
+              }}>
+                <p style={{ margin: 0, color: '#166534', fontSize: '0.875rem' }}>
+                  💡 気になる事業所をブックマークして、後で確認することができます
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </main>
 
