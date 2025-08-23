@@ -836,9 +836,8 @@ const SearchResults: React.FC<{
     addParam('district', 'district'); 
     addParam('services', 'services');
     addParam('available', 'available');
-    if (router.query.page && router.query.page !== '1') {
-      addParam('page', 'page');
-    }
+    // ページ情報は1でなくても常に含める
+    addParam('page', 'page');
     addParam('view', 'view');
     
     return params.toString();
@@ -1013,14 +1012,17 @@ const HomePage: React.FC = () => {
       
       if (hasSearchParams) {
         const filters = decodeSearchFilters(router.query);
-        console.log('🔄 URLから検索条件を復元:', filters);
+        // ページ情報を取得
+        const page = parseInt((router.query.page as string) || '1');
+        
+        console.log('🔄 URLから検索条件を復元:', { filters, page });
         
         setInitialFilters(filters);
         setLastSearchFilters(filters);
         setHasSearched(true);
         
-        // 自動検索実行（URL更新なし）
-        executeSearchWithoutUrlUpdate(filters, 1);
+        // 自動検索実行（URL更新なし）- ページ情報も含める
+        executeSearchWithoutUrlUpdate(filters, page);
       } else if (!hasSearched && !isBookmarkMode) {
         // URLにパラメータがなく、まだ検索していない場合は初期状態を設定
         console.log('📋 初期画面を表示');
@@ -1159,9 +1161,8 @@ const HomePage: React.FC = () => {
     
     // URLパラメータを更新（検索条件を保持）
     const urlParams = encodeSearchFilters(filters);
-    if (page > 1) {
-      urlParams.page = page.toString();
-    }
+    // ページ情報は常に含める（1ページ目でも）
+    urlParams.page = page.toString();
     
     const queryString = new URLSearchParams(urlParams).toString();
     console.log('🔗 URL更新:', queryString);
