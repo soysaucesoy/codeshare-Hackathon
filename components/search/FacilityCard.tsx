@@ -1,4 +1,4 @@
-// components/search/FacilityCard.tsx - 修正版
+// components/search/FacilityCard.tsx - 詳細リンク対応版
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -96,7 +96,9 @@ const Button: React.FC<{
   children: React.ReactNode;
   onClick?: () => void;
   className?: string;
-}> = ({ variant = 'primary', size = 'md', children, onClick, className = '' }) => {
+  asLink?: boolean;
+  href?: string;
+}> = ({ variant = 'primary', size = 'md', children, onClick, className = '', asLink = false, href }) => {
   const variants = {
     primary: 'bg-green-500 text-white hover:bg-green-600',
     secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
@@ -108,11 +110,20 @@ const Button: React.FC<{
     md: 'px-4 py-2 text-sm',
   };
 
+  const baseStyle = `inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${variants[variant]} ${sizes[size]} ${className}`;
+
+  if (asLink && href) {
+    return (
+      <Link href={href}>
+        <span className={baseStyle} style={{ cursor: 'pointer', textDecoration: 'none' }}>
+          {children}
+        </span>
+      </Link>
+    );
+  }
+
   return (
-    <button
-      className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${variants[variant]} ${sizes[size]} ${className}`}
-      onClick={onClick}
-    >
+    <button className={baseStyle} onClick={onClick}>
       {children}
     </button>
   );
@@ -295,11 +306,14 @@ const FacilityCard: React.FC<FacilityCardProps> = ({
 
             {/* アクション */}
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-              <Link href={`/facilities/${facility.id}`}>
-                <Button variant="primary" size="sm">
-                  詳細を見る
-                </Button>
-              </Link>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                asLink 
+                href={`/facilities/${facility.id}`}
+              >
+                詳細を見る
+              </Button>
               <div className="flex items-center space-x-2">
                 {onMessage && isLoggedIn && (
                   <Button
