@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Phone, Globe, Bookmark, MessageCircle, Heart } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Heart } from 'lucide-react';
+import BookmarkIcon from '../ui/BookmarkIcon';
 
 // 型定義
 interface Service {
@@ -41,6 +42,7 @@ interface FacilityCardProps {
   onBookmark?: (facilityId: number) => void;
   onMessage?: (facilityId: number) => void;
   isBookmarked?: boolean;
+  isLoggedIn?: boolean;
 }
 
 // ユーティリティ関数
@@ -156,11 +158,18 @@ const FacilityCard: React.FC<FacilityCardProps> = ({
   onBookmark,
   onMessage,
   isBookmarked = false,
+  isLoggedIn = false,
 }) => {
   const [imageError, setImageError] = useState(false);
 
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
+
+  const handleBookmarkClick = () => {
+    if (onBookmark) {
+      onBookmark(facility.id);
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -203,9 +212,19 @@ const FacilityCard: React.FC<FacilityCardProps> = ({
                   <span>{facility.district}</span>
                 </div>
               </div>
-              <Badge variant="info" size="sm">
-                最終更新: {new Date(facility.updated_at).toLocaleDateString('ja-JP')}
-              </Badge>
+              <div className="flex items-center space-x-2">
+                <Badge variant="info" size="sm">
+                  最終更新: {new Date(facility.updated_at).toLocaleDateString('ja-JP')}
+                </Badge>
+                {/* ログイン状態でのみブックマークアイコンを表示 */}
+                {isLoggedIn && (
+                  <BookmarkIcon
+                    isBookmarked={isBookmarked}
+                    onClick={handleBookmarkClick}
+                    size="md"
+                  />
+                )}
+              </div>
             </div>
 
             {/* 説明 */}
@@ -282,17 +301,7 @@ const FacilityCard: React.FC<FacilityCardProps> = ({
                 </Button>
               </Link>
               <div className="flex items-center space-x-2">
-                {onBookmark && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onBookmark(facility.id)}
-                    className={`p-2 ${isBookmarked ? 'text-yellow-500' : 'text-gray-400'}`}
-                  >
-                    <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
-                  </Button>
-                )}
-                {onMessage && (
+                {onMessage && isLoggedIn && (
                   <Button
                     variant="ghost"
                     size="sm"

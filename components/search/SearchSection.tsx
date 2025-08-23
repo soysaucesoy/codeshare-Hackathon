@@ -1,11 +1,12 @@
-// components/search/SearchSection.tsx - 修正版（サービスID対応）
+// components/search/SearchSection.tsx - globals.css互換版
 import React, { useState, useEffect } from 'react';
+import { Bookmark } from 'lucide-react';
 
 interface SearchFilters {
   query: string;
   district: string;
-  serviceIds: number[];  // 修正: カテゴリではなくサービスID配列
-  availabilityOnly: boolean;  // 修正: 名前を統一
+  serviceIds: number[];
+  availabilityOnly: boolean;
 }
 
 interface Service {
@@ -16,9 +17,36 @@ interface Service {
 
 interface SearchSectionProps {
   onSearchResults: (facilities: any[], loading: boolean, error: string | null, pagination?: any) => void;
+  onShowBookmarks?: () => void;
+  isLoggedIn?: boolean;
+  isBookmarkMode?: boolean;
 }
 
-const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
+// フォールバックのサービスデータ
+const FALLBACK_SERVICES = [
+  { id: 1, name: '居宅介護', category: '訪問系サービス' },
+  { id: 2, name: '重度訪問介護', category: '訪問系サービス' },
+  { id: 3, name: '同行援護', category: '訪問系サービス' },
+  { id: 4, name: '行動援護', category: '訪問系サービス' },
+  { id: 6, name: '療養介護', category: '日中活動系サービス' },
+  { id: 7, name: '生活介護', category: '日中活動系サービス' },
+  { id: 8, name: '短期入所', category: '日中活動系サービス' },
+  { id: 10, name: '共同生活援助', category: '居住系サービス' },
+  { id: 11, name: '自立生活援助', category: '居住系サービス' },
+  { id: 15, name: '就労移行支援', category: '訓練系・就労系サービス' },
+  { id: 16, name: '就労継続支援A型', category: '訓練系・就労系サービス' },
+  { id: 17, name: '就労継続支援B型', category: '訓練系・就労系サービス' },
+  { id: 18, name: '就労定着支援', category: '訓練系・就労系サービス' },
+  { id: 19, name: '児童発達支援', category: '障害児通所系サービス' },
+  { id: 21, name: '放課後等デイサービス', category: '障害児通所系サービス' },
+];
+
+const SearchSection: React.FC<SearchSectionProps> = ({ 
+  onSearchResults, 
+  onShowBookmarks,
+  isLoggedIn = false,
+  isBookmarkMode = false,
+}) => {
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     district: '',
@@ -29,6 +57,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showServiceFilter, setShowServiceFilter] = useState(false);
 
   // サービス一覧を取得
   useEffect(() => {
@@ -38,9 +67,12 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
         if (response.ok) {
           const servicesData = await response.json();
           setServices(servicesData);
+        } else {
+          setServices(FALLBACK_SERVICES);
         }
       } catch (err) {
         console.warn('サービス一覧の取得に失敗:', err);
+        setServices(FALLBACK_SERVICES);
       }
     };
 
@@ -61,8 +93,6 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
     setError(null);
 
     try {
-      console.log('🔍 検索実行:', filters);
-
       const queryParams = new URLSearchParams();
       
       if (filters.query.trim()) {
@@ -82,8 +112,6 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
       queryParams.set('limit', '50');
 
       const apiUrl = `/api/search/facilities?${queryParams.toString()}`;
-      console.log('📡 API URL:', apiUrl);
-
       const response = await fetch(apiUrl);
       
       if (!response.ok) {
@@ -91,13 +119,10 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
       }
 
       const data = await response.json();
-      console.log('✅ 検索結果:', data);
-
       onSearchResults(data.facilities || [], false, null, data.pagination);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '検索中にエラーが発生しました';
-      console.error('❌ 検索エラー:', errorMessage);
       setError(errorMessage);
       onSearchResults([], false, errorMessage);
     } finally {
@@ -109,13 +134,22 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  // サービス選択の変更
   const handleServiceToggle = (serviceId: number, checked: boolean) => {
     const newServiceIds = checked
       ? [...filters.serviceIds, serviceId]
       : filters.serviceIds.filter(id => id !== serviceId);
     
     setFilters(prev => ({ ...prev, serviceIds: newServiceIds }));
+  };
+
+  const handleShowBookmarks = () => {
+    if (onShowBookmarks) {
+      onShowBookmarks();
+    }
+  };
+
+  const clearServices = () => {
+    setFilters(prev => ({ ...prev, serviceIds: [] }));
   };
 
   const districts = [
@@ -125,141 +159,313 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearchResults }) => {
     '葛飾区', '江戸川区'
   ];
 
+  const allServices = Object.values(servicesByCategory).flat();
+
   return (
-    <div className="search-section bg-white rounded-lg shadow-sm border p-6">
-      {/* メイン検索 */}
-      <div className="main-search mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+    <div className="search-section">
+      {/* ヘッダー */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2 className="services-title" style={{ margin: 0 }}>
+          {isBookmarkMode ? 'ブックマークした事業所' : '事業所を検索'}
+        </h2>
+        
+        {/* ブックマークボタン（ログイン時のみ表示） */}
+        {isLoggedIn && (
+          <button
+            onClick={handleShowBookmarks}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              background: isBookmarkMode ? '#eab308' : '#f3f4f6',
+              color: isBookmarkMode ? 'white' : '#374151'
+            }}
+            onMouseOver={(e) => {
+              if (!isBookmarkMode) {
+                e.currentTarget.style.background = '#e5e7eb';
+              } else {
+                e.currentTarget.style.background = '#d97706';
+              }
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = isBookmarkMode ? '#eab308' : '#f3f4f6';
+            }}
+          >
+            <Bookmark size={18} fill={isBookmarkMode ? 'currentColor' : 'none'} />
+            {isBookmarkMode ? 'ブックマーク表示中' : 'ブックマーク'}
+          </button>
+        )}
+      </div>
+
+      {/* ブックマークモード時の説明 */}
+      {isBookmarkMode && (
+        <div style={{ 
+          marginBottom: '1.5rem', 
+          padding: '1rem', 
+          background: '#fef3c7', 
+          border: '1px solid #fbbf24', 
+          borderRadius: '0.5rem' 
+        }}>
+          <p style={{ fontSize: '0.875rem', color: '#92400e', margin: 0 }}>
+            📌 ブックマークした事業所を表示しています。通常の検索に戻るには「検索」ボタンを押してください。
+          </p>
+        </div>
+      )}
+
+      {/* メイン検索（ブックマークモード時は非表示） */}
+      {!isBookmarkMode && (
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+          <div className="search-container">
             <input
               type="text"
+              className="search-input"
               placeholder="事業所名で検索..."
               value={filters.query}
               onChange={(e) => handleInputChange('query', e.target.value)}
-              className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
+            <span className="search-icon">🔍</span>
           </div>
+
+          <div className="filters-section">
+            <h3 className="filters-title">検索条件</h3>
+            
+            <div className="filters-grid">
+              {/* 地区選択 */}
+              <div className="filter-group">
+                <label className="filter-label">地区</label>
+                <select
+                  className="filter-select"
+                  value={filters.district}
+                  onChange={(e) => handleInputChange('district', e.target.value)}
+                >
+                  <option value="">すべての地区</option>
+                  {districts.map(district => (
+                    <option key={district} value={district}>{district}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* サービス選択 */}
+              <div className="filter-group">
+                <label className="filter-label">
+                  提供サービス 
+                  {filters.serviceIds.length > 0 && (
+                    <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>
+                      ({filters.serviceIds.length}件選択中)
+                    </span>
+                  )}
+                </label>
+                <button
+                  type="button"
+                  className="filter-select"
+                  style={{ 
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    background: showServiceFilter ? '#f0fdf4' : 'white'
+                  }}
+                  onClick={() => setShowServiceFilter(!showServiceFilter)}
+                >
+                  {filters.serviceIds.length === 0 
+                    ? 'サービスを選択...' 
+                    : `${filters.serviceIds.length}件のサービスを選択中`
+                  }
+                  <span style={{ float: 'right' }}>
+                    {showServiceFilter ? '▲' : '▼'}
+                  </span>
+                </button>
+              </div>
+
+              {/* 空きありフィルター */}
+              <div className="filter-group">
+                <label className="filter-checkbox-container">
+                  <input
+                    type="checkbox"
+                    className="filter-checkbox"
+                    checked={filters.availabilityOnly}
+                    onChange={(e) => handleInputChange('availabilityOnly', e.target.checked)}
+                  />
+                  <span className="filter-checkbox-label">空きのある事業所のみ</span>
+                </label>
+              </div>
+            </div>
+
+            {/* サービス選択パネル */}
+            {showServiceFilter && (
+              <div style={{ 
+                marginTop: '1rem',
+                padding: '1.5rem',
+                background: '#f9fafb',
+                borderRadius: '0.5rem',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '1rem' 
+                }}>
+                  <span className="filter-label">サービスを選択してください</span>
+                  <button
+                    type="button"
+                    onClick={clearServices}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    すべてクリア
+                  </button>
+                </div>
+
+                {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+                  <div key={category} style={{ marginBottom: '1.5rem' }}>
+                    <h4 style={{ 
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '0.75rem',
+                      paddingBottom: '0.5rem',
+                      borderBottom: '1px solid #e5e7eb'
+                    }}>
+                      {category}
+                    </h4>
+                    
+                    <div style={{ 
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                      gap: '0.5rem'
+                    }}>
+                      {categoryServices.map((service) => (
+                        <label
+                          key={service.id}
+                          className="filter-checkbox-container"
+                          style={{ 
+                            padding: '0.5rem',
+                            background: filters.serviceIds.includes(service.id) ? '#dcfce7' : 'white',
+                            borderRadius: '0.375rem',
+                            border: filters.serviceIds.includes(service.id) ? '1px solid #22c55e' : '1px solid #e5e7eb',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            className="filter-checkbox"
+                            checked={filters.serviceIds.includes(service.id)}
+                            onChange={(e) => handleServiceToggle(service.id, e.target.checked)}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: '500', 
+                              fontSize: '0.875rem',
+                              color: '#111827',
+                              marginBottom: '0.25rem'
+                            }}>
+                              {service.name}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 選択されたサービスの表示 */}
+            {filters.serviceIds.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <div className="filter-label">選択中のサービス:</div>
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '0.5rem',
+                  marginTop: '0.5rem'
+                }}>
+                  {filters.serviceIds.map(serviceId => {
+                    const service = allServices.find(s => s.id === serviceId);
+                    return service ? (
+                      <span
+                        key={serviceId}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.25rem 0.75rem',
+                          background: '#dcfce7',
+                          color: '#166534',
+                          borderRadius: '1rem',
+                          fontSize: '0.875rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {service.name}
+                        <button
+                          type="button"
+                          onClick={() => handleServiceToggle(serviceId, false)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#166534',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '0.5rem',
+                color: '#dc2626',
+                fontSize: '0.875rem'
+              }}>
+                ❌ {error}
+              </div>
+            )}
+
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+              <button
+                type="submit"
+                className="filter-search-button"
+                disabled={loading}
+              >
+                {loading ? '検索中...' : '検索'}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* ブックマークモード時の簡易操作 */}
+      {isBookmarkMode && (
+        <div style={{ textAlign: 'center' }}>
           <button 
             onClick={handleSearch}
-            disabled={loading}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              loading 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
+            className="filter-search-button"
           >
-            {loading ? '検索中...' : '検索する'}
+            通常検索に戻る
           </button>
         </div>
-        
-        {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            ❌ {error}
-          </div>
-        )}
-      </div>
-
-      {/* フィルター */}
-      <div className="filters-section">
-        <h3 className="text-lg font-semibold mb-4">絞り込み検索</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* 地区選択 */}
-          <div className="filter-group">
-            <label className="block text-sm font-medium text-gray-700 mb-2">地区</label>
-            <select
-              value={filters.district}
-              onChange={(e) => handleInputChange('district', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="">すべての地区</option>
-              {districts.map(district => (
-                <option key={district} value={district}>{district}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 空きありフィルター */}
-          <div className="filter-group">
-            <label className="block text-sm font-medium text-gray-700 mb-2">空き状況</label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={filters.availabilityOnly}
-                onChange={(e) => handleInputChange('availabilityOnly', e.target.checked)}
-                className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <span className="text-sm text-gray-700">空きのある事業所のみ</span>
-            </label>
-          </div>
-        </div>
-
-        {/* サービス選択（修正版：サービスID使用） */}
-        {Object.keys(servicesByCategory).length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">提供サービス</h4>
-            <div className="space-y-4">
-              {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
-                <div key={category} className="border rounded-lg p-3">
-                  <h5 className="font-medium text-gray-800 mb-2">{category}</h5>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {categoryServices.map((service) => (
-                      <label key={service.id} className="flex items-center text-sm">
-                        <input
-                          type="checkbox"
-                          checked={filters.serviceIds.includes(service.id)}
-                          onChange={(e) => handleServiceToggle(service.id, e.target.checked)}
-                          className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                        <span className="text-gray-700">{service.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 選択されたサービスの表示 */}
-        {filters.serviceIds.length > 0 && (
-          <div className="mb-4 p-3 bg-green-50 rounded-lg">
-            <div className="text-sm font-medium text-green-800 mb-2">
-              選択中のサービス ({filters.serviceIds.length}件):
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filters.serviceIds.map(serviceId => {
-                const service = services.find(s => s.id === serviceId);
-                return service ? (
-                  <span key={serviceId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {service.name}
-                    <button
-                      onClick={() => handleServiceToggle(serviceId, false)}
-                      className="ml-1 text-green-600 hover:text-green-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
-
-        <button 
-          onClick={handleSearch}
-          disabled={loading}
-          className={`w-full py-3 rounded-lg font-medium transition-colors ${
-            loading 
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-500 text-white hover:bg-green-600'
-          }`}
-        >
-          {loading ? '検索中...' : '条件で検索'}
-        </button>
-      </div>
+      )}
     </div>
   );
 };

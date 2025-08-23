@@ -1,4 +1,4 @@
-// pages/api/search/facilities.ts - RPCを利用した修正版
+// pages/api/search/facilities.ts - ブックマーク対応版
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
@@ -45,10 +45,96 @@ export default async function handler(
       district = '',
       service_ids,
       availability_only = 'false',
+      facility_ids, // 新しく追加：ブックマーク用
       page = '1',
       limit = '12'
     } = req.query;
 
+    // ★ ブックマーク表示用：facility_ids が指定されている場合
+    if (facility_ids) {
+      console.log('🔖 === ブックマーク事業所取得開始 ===');
+      
+      try {
+        const facilityIdsStr = Array.isArray(facility_ids) ? facility_ids[0] : facility_ids;
+        const facilityIdsArray: number[] = JSON.parse(facilityIdsStr);
+        
+        if (!Array.isArray(facilityIdsArray) || facilityIdsArray.length === 0) {
+          return res.status(400).json({ error: 'Invalid facility_ids format' });
+        }
+
+        console.log('指定された事業所ID:', facilityIdsArray);
+
+        // 指定されたIDの事業所を直接取得
+        const { data: facilities, error } = await supabase
+          .from('facilities')
+          .select(`
+            id,
+            name,
+            description,
+            appeal_points,
+            address,
+            district,
+            latitude,
+            longitude,
+            phone_number,
+            website_url,
+            image_url,
+            is_active,
+            created_at,
+            updated_at,
+            services:facility_services(
+              id,
+              availability,
+              capacity,
+              current_users,
+              service:services(
+                id,
+                name,
+                category,
+                description
+              )
+            )
+          `)
+          .in('id', facilityIdsArray)
+          .eq('is_active', true)
+          .order('id', { ascending: true });
+
+        if (error) {
+          console.error('❌ ブックマーク事業所取得エラー:', error);
+          throw new Error(`事業所取得中にエラーが発生しました: ${error.message}`);
+        }
+
+        const resultFacilities = facilities || [];
+        console.log('🎉 ブックマーク事業所取得完了:', resultFacilities.length, '件');
+
+        // ブックマークの順序を維持するためにソート
+        const sortedFacilities = resultFacilities.sort((a, b) => {
+          const aIndex = facilityIdsArray.indexOf(a.id);
+          const bIndex = facilityIdsArray.indexOf(b.id);
+          return aIndex - bIndex;
+        });
+
+        const response: SearchResponse = {
+          facilities: sortedFacilities,
+          pagination: {
+            page: 1,
+            limit: sortedFacilities.length,
+            total: sortedFacilities.length,
+            pages: 1,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
+
+        return res.status(200).json(response);
+
+      } catch (parseError) {
+        console.error('❌ facility_ids解析エラー:', parseError);
+        return res.status(400).json({ error: 'Invalid facility_ids format' });
+      }
+    }
+
+    // ★ 通常の検索処理（既存のRPC方式）
     const searchQuery = Array.isArray(query) ? query[0] : query;
     const searchDistrict = Array.isArray(district) ? district[0] : district;
     const searchAvailabilityOnly = (Array.isArray(availability_only) ? availability_only[0] : availability_only) === 'true';
