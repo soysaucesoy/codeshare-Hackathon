@@ -16,6 +16,16 @@ const DashboardPage: React.FC = () => {
     }
   }, [user, loading, router])
 
+  // 3秒後に検索ページへ自動遷移
+  React.useEffect(() => {
+    if (!loading && user) {
+      const timer = setTimeout(() => {
+        router.push('/') // ← 遷移先を指定
+      }, 300000)
+      return () => clearTimeout(timer) // クリーンアップ
+    }
+  }, [user, loading, router])
+
   const handleSignOut = async () => {
     await signOut()
     router.push('/auth/login')
@@ -37,11 +47,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <>
-      <Head>
-        <title>ダッシュボード - ケアコネクト</title>
-      </Head>
-      
+    <>      
       <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
         {/* ヘッダー */}
         <header className="header">
@@ -60,27 +66,23 @@ const DashboardPage: React.FC = () => {
 
         {/* メインコンテンツ */}
         <main className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-          <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>
-              ダッシュボード
-            </h2>
-            
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ background: '#dcfce7', padding: '1rem', borderRadius: '0.5rem' }}>
                 <h3 style={{ fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
                   ログイン成功！
                 </h3>
                 <p style={{ color: '#15803d' }}>
-                  認証システムが正常に動作しています。
+                  認証システムが正常に動作しています。<br />
+                  <strong>3秒後にメインページに移動します...</strong>
                 </p>
               </div>
 
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
                 <h3 style={{ fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>
-                  ユーザー情報
+                  ユーザー情報（マイページにて、希望サービスなどの追加の情報を登録可能）
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                  <p><strong>ID:</strong> {user.id}</p>
                   <p><strong>メール:</strong> {user.email}</p>
                   <p><strong>名前:</strong> {user.user_metadata?.full_name || '未設定'}</p>
                   <p><strong>登録日時:</strong> {new Date(user.created_at).toLocaleString('ja-JP')}</p>
@@ -90,7 +92,7 @@ const DashboardPage: React.FC = () => {
 
               <div style={{ marginTop: '1rem' }}>
                 <Link href="/" className="cta-primary">
-                  事業所検索ページに戻る
+                  メインページに移動する
                 </Link>
               </div>
             </div>
