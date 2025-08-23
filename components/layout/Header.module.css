@@ -1,0 +1,96 @@
+.header {
+  background: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #22c55e;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.mainTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.guestActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.userEmail {
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.navButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loginButton {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+.loginButton:hover {
+  background-color: #e5e7eb;
+}
+
+.registerButton {
+  background-color: #22c55e;
+  color: white;
+}
+.registerButton:hover {
+  background-color: #16a34a;
+}

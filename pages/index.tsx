@@ -1,20 +1,12 @@
-// pages/index.tsx - サービス検索機能拡張版（地図機能追加）
-import React, { useState, useEffect } from 'react';
+// pages/index.tsx - エラー修正完全版
+import React, { useState, useEffect ,useRouter} from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import ToggleSwitch from '../components/ui/ToggleSwitch';
+import { useAuthContext } from '@/components/providers/AuthProvider';
+import { useBookmarks } from '@/lib/hooks/useBookmarks';
+import { supabase } from '@/lib/supabase/client'
 
-// 地図コンポーネントを動的インポート（SSR対応）
-const MapView = dynamic(() => import('../components/search/MapView'), {
-  ssr: false,
-  loading: () => (
-    <div className="map-loading">
-      <div className="loading-spinner">⏳</div>
-      <p>地図を読み込み中...</p>
-    </div>
-  )
-});
+
 
 // 型定義
 interface Service {
@@ -47,13 +39,6 @@ interface Facility {
   services?: Service[];
 }
 
-interface ServiceOption {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-}
-
 interface SearchResponse {
   facilities: Facility[];
   pagination: {
@@ -66,7 +51,14 @@ interface SearchResponse {
   };
 }
 
-// サービスカテゴリとサービス一覧（実際の実装ではAPIから取得）
+interface SearchFilters {
+  query: string;
+  district: string;
+  serviceIds: number[];
+  availabilityOnly: boolean;
+}
+
+// サービスカテゴリ
 const SERVICE_CATEGORIES = {
   '訪問系サービス': [
     { id: 1, name: '居宅介護', description: '自宅で入浴、排せつ、食事の介護などを行います' },
@@ -95,14 +87,9 @@ const SERVICE_CATEGORIES = {
   ],
 };
 
-// 検索フィルター
-const SearchFilter: React.FC<{
-  onSearch: (filters: { 
-    query: string; 
-    district: string; 
-    serviceIds: number[];
-    availabilityOnly: boolean 
-  }) => void;
+// SearchFilterコンポーネント
+const SearchFilterComponent: React.FC<{
+  onSearch: (filters: SearchFilters) => void;
   loading?: boolean;
 }> = ({ onSearch, loading = false }) => {
   const [query, setQuery] = useState('');
@@ -133,266 +120,250 @@ const SearchFilter: React.FC<{
     setSelectedServices([]);
   };
 
-  // 東京都全体の市区町村リスト
+  // 東京都の市区町村リスト
   const districts = [
-    // 特別区（23区）
     '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区',
     '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区',
     '杉並区', '豊島区', '北区', '荒川区', '板橋区', '練馬区', '足立区',
-    '葛飾区', '江戸川区',
-    
-    // 市部
-    '八王子市', '立川市', '武蔵野市', '三鷹市', '青梅市', '府中市', '昭島市',
-    '調布市', '町田市', '小金井市', '小平市', '日野市', '東村山市', '国分寺市',
-    '国立市', '福生市', '狛江市', '東大和市', '清瀬市', '東久留米市',
-    '武蔵村山市', '多摩市', '稲城市', '羽村市', 'あきる野市', '西東京市',
-    
-    // 西多摩郡
-    '瑞穂町', '日の出町', '檜原村', '奥多摩町',
-    
-    // 島しょ部
-    '大島町', '利島村', '新島村', '神津島村', '三宅村', '御蔵島村',
-    '八丈町', '青ヶ島村', '小笠原村'
+    '葛飾区', '江戸川区'
   ];
 
-  // 全サービス一覧を作成
   const allServices = Object.values(SERVICE_CATEGORIES).flat();
 
   return (
-    <div className="search-section">
-      <div className="main-search">
-        <h2 className="services-title">事業所を検索</h2>
+    <form onSubmit={handleSubmit}>
+      <div className="search-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="事業所名で検索..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <span className="search-icon">🔍</span>
       </div>
-      
-      <form onSubmit={handleSubmit}>
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="事業所名で検索..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <span className="search-icon">🔍</span>
+
+      <div className="filters-section">
+        <h3 className="filters-title">検索条件</h3>
+        
+        <div className="filters-grid">
+          <div className="filter-group">
+            <label className="filter-label">地区</label>
+            <select
+              className="filter-select"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+            >
+              <option value="">すべての地区</option>
+              {districts.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">
+              提供サービス 
+              {selectedServices.length > 0 && (
+                <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>
+                  ({selectedServices.length}件選択中)
+                </span>
+              )}
+            </label>
+            <button
+              type="button"
+              className="filter-select"
+              style={{ 
+                textAlign: 'left',
+                cursor: 'pointer',
+                background: showServiceFilter ? '#f0fdf4' : 'white'
+              }}
+              onClick={() => setShowServiceFilter(!showServiceFilter)}
+            >
+              {selectedServices.length === 0 
+                ? 'サービスを選択...' 
+                : `${selectedServices.length}件のサービスを選択中`
+              }
+              <span style={{ float: 'right' }}>
+                {showServiceFilter ? '▲' : '▼'}
+              </span>
+            </button>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-checkbox-container">
+              <input
+                type="checkbox"
+                className="filter-checkbox"
+                checked={availabilityOnly}
+                onChange={(e) => setAvailabilityOnly(e.target.checked)}
+              />
+              <span className="filter-checkbox-label">空きのある事業所のみ</span>
+            </label>
+          </div>
         </div>
 
-        <div className="filters-section">
-          <h3 className="filters-title">検索条件</h3>
-          
-          <div className="filters-grid">
-            <div className="filter-group">
-              <label className="filter-label">地区</label>
-              <select
-                className="filter-select"
-                value={district}
-                onChange={(e) => setDistrict(e.target.value)}
-              >
-                <option value="">すべての地区</option>
-                {districts.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">
-                提供サービス 
-                {selectedServices.length > 0 && (
-                  <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>
-                    ({selectedServices.length}件選択中)
-                  </span>
-                )}
-              </label>
+        {/* サービス選択パネル */}
+        {showServiceFilter && (
+          <div style={{ 
+            marginTop: '1rem',
+            padding: '1.5rem',
+            background: '#f9fafb',
+            borderRadius: '0.5rem',
+            border: '1px solid #e5e7eb'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '1rem' 
+            }}>
+              <span className="filter-label">サービスを選択してください</span>
               <button
                 type="button"
-                className="filter-select"
-                style={{ 
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  background: showServiceFilter ? '#f0fdf4' : 'white'
+                onClick={clearServices}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6b7280',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer'
                 }}
-                onClick={() => setShowServiceFilter(!showServiceFilter)}
               >
-                {selectedServices.length === 0 
-                  ? 'サービスを選択...' 
-                  : `${selectedServices.length}件のサービスを選択中`
-                }
-                <span style={{ float: 'right' }}>
-                  {showServiceFilter ? '▲' : '▼'}
-                </span>
+                すべてクリア
               </button>
             </div>
 
-            <div className="filter-group">
-              <label className="filter-checkbox-container">
-                <input
-                  type="checkbox"
-                  className="filter-checkbox"
-                  checked={availabilityOnly}
-                  onChange={(e) => setAvailabilityOnly(e.target.checked)}
-                />
-                <span className="filter-checkbox-label">空きのある事業所のみ</span>
-              </label>
-            </div>
-          </div>
-
-          {/* サービス選択パネル */}
-          {showServiceFilter && (
-            <div style={{ 
-              marginTop: '1rem',
-              padding: '1.5rem',
-              background: '#f9fafb',
-              borderRadius: '0.5rem',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '1rem' 
-              }}>
-                <span className="filter-label">サービスを選択してください</span>
-                <button
-                  type="button"
-                  onClick={clearServices}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#6b7280',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  すべてクリア
-                </button>
-              </div>
-
-              {Object.entries(SERVICE_CATEGORIES).map(([category, services]) => (
-                <div key={category} style={{ marginBottom: '1.5rem' }}>
-                  <h4 style={{ 
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#374151',
-                    marginBottom: '0.75rem',
-                    paddingBottom: '0.5rem',
-                    borderBottom: '1px solid #e5e7eb'
-                  }}>
-                    {category}
-                  </h4>
-                  
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '0.5rem'
-                  }}>
-                    {services.map((service) => (
-                      <label
-                        key={service.id}
-                        className="filter-checkbox-container"
-                        style={{ 
-                          padding: '0.5rem',
-                          background: selectedServices.includes(service.id) ? '#dcfce7' : 'white',
-                          borderRadius: '0.375rem',
-                          border: selectedServices.includes(service.id) ? '1px solid #22c55e' : '1px solid #e5e7eb',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          className="filter-checkbox"
-                          checked={selectedServices.includes(service.id)}
-                          onChange={() => handleServiceToggle(service.id)}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ 
-                            fontWeight: 500, 
-                            fontSize: '0.875rem',
-                            color: '#111827',
-                            marginBottom: '0.25rem'
-                          }}>
-                            {service.name}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.75rem',
-                            color: '#6b7280',
-                            lineHeight: 1.3
-                          }}>
-                            {service.description}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 選択されたサービスの表示 */}
-          {selectedServices.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
-              <div className="filter-label">選択中のサービス:</div>
-              <div style={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: '0.5rem',
-                marginTop: '0.5rem'
-              }}>
-                {selectedServices.map(serviceId => {
-                  const service = allServices.find(s => s.id === serviceId);
-                  return service ? (
-                    <span
-                      key={serviceId}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.25rem 0.75rem',
-                        background: '#dcfce7',
-                        color: '#166534',
-                        borderRadius: '1rem',
-                        fontSize: '0.875rem',
-                        fontWeight: 500
+            {Object.entries(SERVICE_CATEGORIES).map(([category, services]) => (
+              <div key={category} style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{ 
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '0.75rem',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '1px solid #e5e7eb'
+                }}>
+                  {category}
+                </h4>
+                
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '0.5rem'
+                }}>
+                  {services.map((service) => (
+                    <label
+                      key={service.id}
+                      className="filter-checkbox-container"
+                      style={{ 
+                        padding: '0.5rem',
+                        background: selectedServices.includes(service.id) ? '#dcfce7' : 'white',
+                        borderRadius: '0.375rem',
+                        border: selectedServices.includes(service.id) ? '1px solid #22c55e' : '1px solid #e5e7eb',
+                        transition: 'all 0.2s'
                       }}
                     >
-                      {service.name}
-                      <button
-                        type="button"
-                        onClick={() => handleServiceToggle(serviceId)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#166534',
-                          cursor: 'pointer',
-                          fontSize: '0.75rem'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ) : null;
-                })}
+                      <input
+                        type="checkbox"
+                        className="filter-checkbox"
+                        checked={selectedServices.includes(service.id)}
+                        onChange={() => handleServiceToggle(service.id)}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          fontWeight: 500, 
+                          fontSize: '0.875rem',
+                          color: '#111827',
+                          marginBottom: '0.25rem'
+                        }}>
+                          {service.name}
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          lineHeight: 1.3
+                        }}>
+                          {service.description}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <button
-              type="submit"
-              className="filter-search-button"
-              disabled={loading}
-            >
-              {loading ? '検索中...' : '検索'}
-            </button>
+            ))}
           </div>
+        )}
+
+        {/* 選択されたサービスの表示 */}
+        {selectedServices.length > 0 && (
+          <div style={{ marginTop: '1rem' }}>
+            <div className="filter-label">選択中のサービス:</div>
+            <div style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '0.5rem',
+              marginTop: '0.5rem'
+            }}>
+              {selectedServices.map(serviceId => {
+                const service = allServices.find(s => s.id === serviceId);
+                return service ? (
+                  <span
+                    key={serviceId}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      background: '#dcfce7',
+                      color: '#166534',
+                      borderRadius: '1rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    {service.name}
+                    <button
+                      type="button"
+                      onClick={() => handleServiceToggle(serviceId)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#166534',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <button
+            type="submit"
+            className="filter-search-button"
+            disabled={loading}
+          >
+            {loading ? '検索中...' : '検索'}
+          </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 
-// 事業所カード（既存のまま）
-const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
+// ブックマーク機能付きFacilityCardコンポーネント
+const FacilityCard: React.FC<{ 
+  facility: Facility;
+  isLoggedIn: boolean;
+  isBookmarked: boolean;
+  onBookmarkToggle: (facilityId: number) => void;
+}> = ({ facility, isLoggedIn, isBookmarked, onBookmarkToggle }) => {
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
   
@@ -407,7 +378,39 @@ const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
       </div>
       
       <div className="facility-info">
-        <h3 className="facility-name">{facility.name}</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+          <h3 className="facility-name">{facility.name}</h3>
+          {/* ブックマークボタン（ログイン時のみ表示） */}
+          {isLoggedIn && (
+            <button
+              onClick={() => onBookmarkToggle(facility.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.25rem',
+                borderRadius: '0.25rem',
+                color: isBookmarked ? '#eab308' : '#9ca3af',
+                fontSize: '1.25rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                if (!isBookmarked) {
+                  e.currentTarget.style.color = '#eab308';
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.color = isBookmarked ? '#eab308' : '#9ca3af';
+              }}
+              title={isBookmarked ? 'ブックマークから削除' : 'ブックマークに追加'}
+            >
+              {isBookmarked ? '★' : '☆'}
+            </button>
+          )}
+        </div>
+        
         <p className="facility-district">📍 {facility.district}</p>
         
         {facility.description && (
@@ -476,109 +479,7 @@ const FacilityCard: React.FC<{ facility: Facility }> = ({ facility }) => {
   );
 };
 
-// ページネーションコンポーネント
-const Pagination: React.FC<{
-  pagination: SearchResponse['pagination'];
-  onPageChange: (page: number) => void;
-  loading?: boolean;
-}> = ({ pagination, onPageChange, loading = false }) => {
-  const { page, pages, hasNext, hasPrev, total, limit } = pagination;
-  
-  // 表示するページ番号の範囲を計算
-  const getPageNumbers = () => {
-    const delta = 2; // 現在ページの前後何ページまで表示するか
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, page - delta); i <= Math.min(pages - 1, page + delta); i++) {
-      range.push(i);
-    }
-
-    if (page - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (page + delta < pages - 1) {
-      rangeWithDots.push('...', pages);
-    } else {
-      rangeWithDots.push(pages);
-    }
-
-    return rangeWithDots;
-  };
-
-  if (pages <= 1) return null;
-
-  const startItem = (page - 1) * limit + 1;
-  const endItem = Math.min(page * limit, total);
-
-  return (
-    <div className="pagination-container">
-      <div className="pagination-info">
-        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-          {startItem}-{endItem}件 / 全{total}件
-        </span>
-      </div>
-      
-      <div className="pagination-controls">
-        {/* 前のページボタン */}
-        <button
-          className="pagination-button"
-          onClick={() => onPageChange(page - 1)}
-          disabled={!hasPrev || loading}
-          style={{ 
-            opacity: !hasPrev || loading ? 0.5 : 1,
-            cursor: !hasPrev || loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          ← 前へ
-        </button>
-
-        {/* ページ番号 */}
-        <div className="pagination-numbers">
-          {getPageNumbers().map((pageNum, index) => (
-            <React.Fragment key={index}>
-              {pageNum === '...' ? (
-                <span className="pagination-dots">...</span>
-              ) : (
-                <button
-                  className={`pagination-number ${pageNum === page ? 'active' : ''}`}
-                  onClick={() => onPageChange(pageNum as number)}
-                  disabled={loading || pageNum === page}
-                  style={{
-                    cursor: loading || pageNum === page ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  {pageNum}
-                </button>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* 次のページボタン */}
-        <button
-          className="pagination-button"
-          onClick={() => onPageChange(page + 1)}
-          disabled={!hasNext || loading}
-          style={{ 
-            opacity: !hasNext || loading ? 0.5 : 1,
-            cursor: !hasNext || loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          次へ →
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// 検索結果表示（地図表示対応版）
+// SearchResultsコンポーネント（ブックマーク機能付き）
 const SearchResults: React.FC<{
   facilities: Facility[];
   pagination: SearchResponse['pagination'] | null;
@@ -587,13 +488,28 @@ const SearchResults: React.FC<{
   onPageChange: (page: number) => void;
   viewMode: 'list' | 'map';
   onViewModeChange: (mode: 'list' | 'map') => void;
-}> = ({ facilities, pagination, loading, error, onPageChange, viewMode, onViewModeChange }) => {
-  // リストビューの場合のみloading判定を適用
+  isBookmarkMode: boolean;
+  isLoggedIn: boolean;
+  onBookmarkToggle: (facilityId: number) => void;
+  isBookmarked: (facilityId: number) => boolean;
+}> = ({ 
+  facilities, 
+  pagination, 
+  loading, 
+  error, 
+  onPageChange, 
+  viewMode, 
+  onViewModeChange,
+  isBookmarkMode,
+  isLoggedIn,
+  onBookmarkToggle,
+  isBookmarked
+}) => {
   if (loading && viewMode === 'list') {
     return (
       <div className="loading-container">
         <div className="loading-spinner">⏳</div>
-        <p>検索中...</p>
+        <p>{isBookmarkMode ? 'ブックマークを読み込み中...' : '検索中...'}</p>
       </div>
     );
   }
@@ -603,55 +519,86 @@ const SearchResults: React.FC<{
       <div className="error-container">
         <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
         <p className="error-message">{error}</p>
-        <button 
-          className="cta-secondary" 
-          onClick={() => window.location.reload()}
-          style={{ marginTop: '1rem' }}
-        >
-          再読み込み
-        </button>
       </div>
     );
   }
 
-  // 検索完了後に結果が0件の場合の表示（リストビューのみ）
   if (facilities.length === 0 && !loading && viewMode === 'list') {
     return (
       <div className="no-results">
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-        <h3>検索結果がありません</h3>
-        <p className="no-results-sub">検索条件を変更して再度お試しください。</p>
+        <h3>{isBookmarkMode ? 'ブックマークした事業所がありません' : '検索結果がありません'}</h3>
+        <p className="no-results-sub">
+          {isBookmarkMode 
+            ? '気になる事業所をブックマークしてみてください。'
+            : '検索条件を変更して再度お試しください。'
+          }
+        </p>
       </div>
     );
   }
 
   return (
     <div className="search-results">
-      {/* 検索結果ヘッダーとビュー切替 */}
-      <div className="view-toggle-container">
-        <div className="results-header-with-toggle">
-          <div className="results-title-container">
-            <h2 className="results-title">
-              検索結果 ({pagination?.total || facilities.length}件)
-            </h2>
-          </div>
-          <div className="toggle-container">
-            <ToggleSwitch
-              checked={viewMode === 'map'}
-              onChange={(checked) => onViewModeChange(checked ? 'map' : 'list')}
-              leftLabel="リスト表示"
-              rightLabel="地図表示"
-              leftIcon="📋"
-              rightIcon="🗺️"
-              disabled={loading}
-            />
+      <div className="results-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 className="results-title">
+            {isBookmarkMode ? 'ブックマーク' : '検索結果'} ({pagination?.total || facilities.length}件)
+          </h2>
+          
+          {/* 表示切り替えボタン */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={() => onViewModeChange('list')}
+              style={{
+                padding: '0.5rem 1rem',
+                border: viewMode === 'list' ? '2px solid #22c55e' : '1px solid #d1d5db',
+                background: viewMode === 'list' ? '#f0fdf4' : 'white',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.875rem'
+              }}
+            >
+              📋 リスト表示
+            </button>
+            <button
+              onClick={() => onViewModeChange('map')}
+              disabled={isBookmarkMode}
+              style={{
+                padding: '0.5rem 1rem',
+                border: viewMode === 'map' ? '2px solid #22c55e' : '1px solid #d1d5db',
+                background: viewMode === 'map' ? '#f0fdf4' : 'white',
+                borderRadius: '0.5rem',
+                cursor: isBookmarkMode ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                opacity: isBookmarkMode ? 0.5 : 1
+              }}
+            >
+              🗺️ 地図表示
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 表示内容 */}
       {viewMode === 'map' ? (
-        <MapView facilities={facilities} loading={loading} />
+        <div className="map-container">
+          <div style={{
+            height: '600px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🗺️</div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>地図表示</h3>
+            <p style={{ color: '#6b7280', textAlign: 'center' }}>
+              地図機能は開発中です
+            </p>
+          </div>
+          <div className="map-stats">
+            {facilities.length}件の事業所が見つかりました
+          </div>
+        </div>
       ) : (
         <>
           {loading && (
@@ -661,29 +608,42 @@ const SearchResults: React.FC<{
             </div>
           )}
           
-          {!loading && facilities.length === 0 && (
-            <div className="no-results">
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-              <h3>検索結果がありません</h3>
-              <p className="no-results-sub">検索条件を変更して再度お試しください。</p>
-            </div>
-          )}
-
           {!loading && facilities.length > 0 && (
             <div className="facilities-grid">
               {facilities.map((facility) => (
-                <FacilityCard key={facility.id} facility={facility} />
+                <FacilityCard 
+                  key={facility.id} 
+                  facility={facility} 
+                  isLoggedIn={isLoggedIn}
+                  isBookmarked={isBookmarked(facility.id)}
+                  onBookmarkToggle={onBookmarkToggle}
+                />
               ))}
             </div>
           )}
 
-          {/* ページネーション（リスト表示時のみ） */}
-          {pagination && !loading && (
-            <Pagination 
-              pagination={pagination} 
-              onPageChange={onPageChange} 
-              loading={loading}
-            />
+          {/* ブックマーク機能の説明（未ログイン時） */}
+          {!isLoggedIn && !isBookmarkMode && facilities.length > 0 && (
+            <div style={{
+              marginTop: '2rem',
+              padding: '1rem',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ color: '#2563eb', marginRight: '0.75rem' }}>💡</div>
+                <div>
+                  <p style={{ color: '#1e40af', fontWeight: '500', margin: 0 }}>ブックマーク機能について</p>
+                  <p style={{ color: '#1e40af', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
+                    <Link href="/auth/login" style={{ textDecoration: 'underline', color: '#1d4ed8' }}>
+                      ログイン
+                    </Link>
+                    すると、気になる事業所をブックマークして後で確認できます。
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}
@@ -693,66 +653,155 @@ const SearchResults: React.FC<{
 
 // メインページ
 const HomePage: React.FC = () => {
+  const { user, loading: authLoading, signOut } = useAuthContext();
+  const { bookmarks, refreshBookmarks, isBookmarked, toggleBookmark } = useBookmarks();
+  
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [pagination, setPagination] = useState<SearchResponse['pagination'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-  const [lastSearchFilters, setLastSearchFilters] = useState<{
-    query: string; 
-    district: string; 
-    serviceIds: number[];
-    availabilityOnly: boolean 
-  } | null>(null);
+  const [isBookmarkMode, setIsBookmarkMode] = useState(false);
+  const [lastSearchFilters, setLastSearchFilters] = useState<SearchFilters | null>(null);
 
-  // 検索実行関数（ページ指定対応）
-  const executeSearch = async (
-    filters: { 
-      query: string; 
-      district: string; 
-      serviceIds: number[];
-      availabilityOnly: boolean 
-    }, 
-    page: number = 1,
-    forceViewMode?: 'list' | 'map'
-  ) => {
+  const isLoggedIn = !!user;
+
+  // ブックマーク表示処理（修正版）
+  const handleShowBookmarks = async () => {
+    if (!isLoggedIn) {
+      alert('ブックマーク機能を使用するにはログインが必要です。');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setIsBookmarkMode(true);
+    setHasSearched(true);
+
     try {
-      setLoading(true);
-      setError(null);
+      console.log('🔖 ブックマーク表示開始...');
+      
+      // 最新のブックマーク情報を取得
+      await refreshBookmarks();
+      
+      // 少し待ってからブックマーク情報を処理
+      setTimeout(async () => {
+        console.log('現在のブックマーク:', bookmarks);
+        
+        if (bookmarks.length === 0) {
+          console.log('ブックマークが0件');
+          setFacilities([]);
+          setPagination(null);
+          setLoading(false);
+          return;
+        }
+        
+        // ブックマークから事業所IDを取得
+        const bookmarkedFacilityIds = bookmarks.map(bookmark => parseInt(bookmark.facility));
+        console.log('ブックマーク事業所ID:', bookmarkedFacilityIds);
 
-      const currentViewMode = forceViewMode || viewMode;
+        try {
+          // facility_ids パラメータを使ってAPI呼び出し
+          const params = new URLSearchParams();
+          params.append('facility_ids', JSON.stringify(bookmarkedFacilityIds));
+          
+          console.log('API呼び出し開始...');
+          const response = await fetch(`/api/search/facilities?${params.toString()}`);
+          
+          if (!response.ok) {
+            throw new Error(`API エラー: ${response.status}`);
+          }
+
+          const data: SearchResponse = await response.json();
+          
+          console.log(`✅ 取得完了: ${data.facilities?.length || 0} 件`);
+
+          if (data.facilities && data.facilities.length > 0) {
+            setFacilities(data.facilities);
+            setPagination(data.pagination);
+          } else {
+            console.log('❌ ブックマークした事業所が見つかりません');
+            setFacilities([]);
+            setPagination(null);
+            setError('ブックマークした事業所が見つかりませんでした。削除された可能性があります。');
+          }
+          
+        } catch (err) {
+          console.error('❌ 事業所取得エラー:', err);
+          setError(err instanceof Error ? err.message : 'ブックマークした事業所の取得に失敗しました');
+          setFacilities([]);
+          setPagination(null);
+        }
+        
+        setLoading(false);
+      }, 100);
+      
+    } catch (err) {
+      console.error('❌ ブックマーク表示エラー:', err);
+      setError(err instanceof Error ? err.message : 'ブックマークの取得中にエラーが発生しました');
+      setFacilities([]);
+      setPagination(null);
+      setLoading(false);
+    }
+  };
+
+  // ブックマークトグル処理
+  const handleBookmarkToggle = async (facilityId: number) => {
+    console.log('🔖 ブックマークトグル開始');
+    console.log('  事業所ID:', facilityId, '(型:', typeof facilityId, ')');
+    
+    if (!isLoggedIn) {
+      alert('ブックマーク機能を使用するにはログインが必要です。');
+      return;
+    }
+
+    try {
+      console.log('  ユーザーID:', user?.id);
+      console.log('  送信する事業所ID:', facilityId.toString());
+      
+      await toggleBookmark(facilityId.toString());
+      
+      console.log('✅ ブックマーク操作完了');
+      
+      // ブックマークモード中に削除された場合は表示から除外
+      if (isBookmarkMode && !isBookmarked(facilityId.toString())) {
+        setFacilities(prev => prev.filter(f => f.id !== facilityId));
+      }
+    } catch (error) {
+      console.error('❌ ブックマーク操作エラー:', error);
+      alert('ブックマーク操作に失敗しました。');
+    }
+  };
+
+  // 通常検索処理
+  const executeSearch = async (filters: SearchFilters, page: number = 1) => {
+    setLoading(true);
+    setError(null);
+    setIsBookmarkMode(false);
+
+    try {
       const params = new URLSearchParams();
       if (filters.query) params.append('query', filters.query);
       if (filters.district) params.append('district', filters.district);
-      if (filters.serviceIds.length > 0) {
+      if (filters.serviceIds?.length > 0) {
         params.append('service_ids', JSON.stringify(filters.serviceIds));
       }
       if (filters.availabilityOnly) params.append('availability_only', 'true');
       
-      // 地図表示の場合は全件取得、リスト表示の場合はページング
-      if (currentViewMode === 'map') {
-        params.append('page', '1');
-        params.append('limit', '1000'); // 大きな値で全件取得
-      } else {
-        params.append('page', page.toString());
-        params.append('limit', '12');
-      }
-
-      console.log('検索実行:', { ...filters, page, viewMode: currentViewMode });
+      params.append('page', page.toString());
+      params.append('limit', '12');
 
       const response = await fetch(`/api/search/facilities?${params.toString()}`);
       const data: SearchResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error((data as any).error || '検索に失敗しました');
+        throw new Error('検索に失敗しました');
       }
 
       setFacilities(data.facilities || []);
-      // 地図表示の場合はページネーション情報をクリア
-      setPagination(currentViewMode === 'map' ? null : data.pagination);
+      setPagination(data.pagination);
     } catch (err) {
-      console.error('検索エラー:', err);
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
       setFacilities([]);
       setPagination(null);
@@ -761,39 +810,54 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 新しい検索（フィルター変更時）
-  const handleSearch = async (filters: { 
-    query: string; 
-    district: string; 
-    serviceIds: number[];
-    availabilityOnly: boolean 
-  }) => {
+  const handleSearch = async (filters: SearchFilters) => {
     setHasSearched(true);
     setLastSearchFilters(filters);
     await executeSearch(filters, 1);
   };
 
-  // ページ変更時
   const handlePageChange = async (page: number) => {
     if (!lastSearchFilters) return;
-    
     await executeSearch(lastSearchFilters, page);
-    
-    // ページ変更後は検索結果の上部にスクロール
-    const searchResultsElement = document.querySelector('.search-results');
-    if (searchResultsElement) {
-      searchResultsElement.scrollIntoView({ behavior: 'smooth' });
-    }
   };
 
-  // ビューモード変更時
-  const handleViewModeChange = async (mode: 'list' | 'map') => {
-    setViewMode(mode);
-    
-    // 既に検索結果がある場合は、新しいビューモードで再検索
-    if (lastSearchFilters && hasSearched) {
-      await executeSearch(lastSearchFilters, 1, mode);
+  const handleViewModeChange = (mode: 'list' | 'map') => {
+    if (isBookmarkMode && mode === 'map') {
+      alert('ブックマーク表示では地図モードは利用できません。');
+      return;
     }
+    setViewMode(mode);
+  };
+
+  // 認証状態に応じたボタンの表示
+  const renderAuthButtons = () => {
+    if (authLoading) {
+      return <div style={{ width: '80px', height: '32px', background: '#e5e7eb', borderRadius: '0.25rem', animation: 'pulse 2s infinite' }}></div>;
+    }
+
+    if (user) {
+      return (
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <span style={{ color: '#374151', fontSize: '0.875rem' }}>
+            {user.user_metadata?.full_name || user.email}さん
+          </span>
+          <Link href="/dashboard" className="cta-primary">
+            ダッシュボード
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <Link href="/auth/login" className="cta-secondary">
+          ログイン
+        </Link>
+        <Link href="/auth/register" className="cta-primary">
+          新規登録
+        </Link>
+      </div>
+    );
   };
 
   return (
@@ -820,9 +884,12 @@ const HomePage: React.FC = () => {
       </Link>
       <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
+        {/* mypageあとで、ログイン後にのみ表示されるようにする */}
+        {isLoggedIn && (
         <Link href="/mypage" passHref legacyBehavior>
           <a className="cta-primary">マイページ</a>
         </Link>
+        )}
         <button className="cta-primary">よくある質問/お問い合わせ</button>
       </div>
     </div>
@@ -831,23 +898,51 @@ const HomePage: React.FC = () => {
 
 {/* ヒーロー */}
 <section className="cta-section" style={{ marginTop: '0', paddingTop: '1rem' }}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' ,paddingLeft: '8rem'}}>
-    <Link href="/register">
-      <button className="cta-secondary">利用者用　新規登録/ログイン</button>
-    </Link>
-    <p className="cta-description" style={{ margin: 0 }}>
-      登録すると、ブックマーク機能やメッセージ機能を利用可能
+  {!isLoggedIn && (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
+        <Link href="/auth/login">
+          <button className="cta-secondary">利用者用　新規登録/ログイン</button>
+        </Link>
+        <p className="cta-description" style={{ margin: 0 }}>
+          登録すると、ブックマーク機能やメッセージ機能を利用可能
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem', gap: '1rem', paddingLeft: '8rem' }}>
+        <Link href="/register">
+          <button className="cta-secondary">事業者用　新規申請/ログイン</button>
+        </Link>
+        <p className="cta-description" style={{ margin: 0 }}>
+          施設の空き情報などの編集はここから
+        </p>
+      </div>
+    </>
+  )}
+{isLoggedIn && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '8rem' }}>
+    <p className="cta-description" style={{ margin: 0, fontSize: '1.125rem', fontWeight: '500' }}>
+      ようこそ、{user?.user_metadata?.full_name || user?.email}さん
     </p>
+    <button
+      className="cta-secondary"
+      onClick={async () => {
+        const { error } = await signOut();
+        if (error) {
+          console.error("ログアウトエラー:", error.message);
+          alert("ログアウトに失敗しました");
+        } else {
+          alert("ログアウトしました");
+        }
+      }}
+    >
+      ログアウト
+    </button>
   </div>
-    <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem',gap: '1rem' ,paddingLeft: '8rem'}}>
-    <Link href="/register">
-      <button className="cta-secondary">事業者用　新規申請/ログイン</button>
-    </Link>
-    <p className="cta-description" style={{ margin: 0 }}>
-      施設の空き情報などの編集はここから
-    </p>
-  </div>
+)}
+
 </section>
+
 
       {/* 
       ヒーロー部分
@@ -888,7 +983,68 @@ const HomePage: React.FC = () => {
         )}
         
         {/* 検索セクション */}
-        <SearchFilter onSearch={handleSearch} loading={loading} />
+        <div className="search-section">
+          {/* ヘッダー */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 className="services-title" style={{ margin: 0 }}>
+              {isBookmarkMode ? 'ブックマークした事業所' : '事業所を検索'}
+            </h2>
+            
+            {/* ブックマークボタン */}
+            {isLoggedIn && (
+              <button
+                onClick={handleShowBookmarks}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  background: isBookmarkMode ? '#eab308' : '#f3f4f6',
+                  color: isBookmarkMode ? 'white' : '#374151'
+                }}
+              >
+                {isBookmarkMode ? '★' : '☆'} {isBookmarkMode ? 'ブックマーク表示中' : 'ブックマーク'}
+              </button>
+            )}
+          </div>
+
+          {/* ブックマークモード時の説明 */}
+          {isBookmarkMode && (
+            <div style={{ 
+              marginBottom: '1.5rem', 
+              padding: '1rem', 
+              background: '#fef3c7', 
+              border: '1px solid #fbbf24', 
+              borderRadius: '0.5rem' 
+            }}>
+              <p style={{ fontSize: '0.875rem', color: '#92400e', margin: 0 }}>
+                📌 ブックマークした事業所を表示しています。通常の検索に戻るには下の「通常検索に戻る」ボタンを押してください。
+              </p>
+            </div>
+          )}
+
+          {!isBookmarkMode ? (
+            <SearchFilterComponent onSearch={handleSearch} loading={loading} />
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <button 
+                onClick={() => {
+                  setIsBookmarkMode(false);
+                  setHasSearched(false);
+                  setFacilities([]);
+                  setPagination(null);
+                }}
+                className="filter-search-button"
+              >
+                通常検索に戻る
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 検索結果 */}
         {hasSearched && (
@@ -900,6 +1056,10 @@ const HomePage: React.FC = () => {
             onPageChange={handlePageChange}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
+            isBookmarkMode={isBookmarkMode}
+            isLoggedIn={isLoggedIn}
+            onBookmarkToggle={handleBookmarkToggle}
+            isBookmarked={(facilityId: number) => isBookmarked(facilityId.toString())}
           />
         )}
 
@@ -944,9 +1104,11 @@ const HomePage: React.FC = () => {
               登録すると、ブックマーク機能やメッセージ機能をご利用いただけます。
             </p>
             <div className="cta-buttons">
-              <button className="cta-primary">利用者として登録</button>
-              <Link href="/register" passHref legacyBehavior>
-                <a className="cta-secondary">事業所として登録</a>
+              <Link href="/auth/register?type=user" className="cta-primary">
+                利用者として登録
+              </Link>
+              <Link href="/auth/register?type=facility" className="cta-secondary">
+                事業所として登録
               </Link>
             </div>
           </section>
