@@ -811,6 +811,18 @@ const handleProfileSubmit = async (e: React.FormEvent) => {
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
             プロフィール情報の確認・編集やブックマークの管理ができます
           </p>
+          {/* デバッグ情報（開発時のみ） */}
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.5rem', 
+            background: '#f0fdf4', 
+            border: '1px solid #bbf7d0',
+            borderRadius: '0.25rem',
+            fontSize: '0.75rem',
+            color: '#166534'
+          }}>
+            ✅ 修正版: usersテーブル + user_detailsテーブル直接操作
+          </div>
         </div>
 
         {/* タブナビゲーション */}
