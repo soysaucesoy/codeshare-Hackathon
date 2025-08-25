@@ -1,3 +1,38 @@
+/* styles/globals.css */
+
+/* ビューポート基本設定 */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* レスポンシブ基本設定 */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* スマートフォン対応 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+}
+
+
+
 * {
   box-sizing: border-box;
   padding: 0;

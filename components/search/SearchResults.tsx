@@ -199,42 +199,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       </div>
     );
   }
-
-  // マップ表示モード（今後の実装用）
-  if (viewMode === 'map') {
-    return (
-      <div className="search-results">
-        <div className="results-header">
-          <h3 className="results-title">
-            {isBookmarkMode 
-              ? `ブックマークした事業所 (${facilities.length}件) - 地図表示`
-              : `検索結果 (${facilities.length}件) - 地図表示`
-            }
-          </h3>
-        </div>
-        
-        <div className="map-container">
-          <div style={{
-            height: '600px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column'
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🗺️</div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>地図表示</h3>
-            <p style={{ color: '#6b7280', textAlign: 'center' }}>
-              地図機能は開発中です
-            </p>
-          </div>
-          <div className="map-stats">
-            {facilities.length}件の事業所が見つかりました
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return null;
 };
 

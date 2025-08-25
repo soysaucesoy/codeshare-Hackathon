@@ -35,8 +35,8 @@
 │   ├── layout/             # 共通レイアウトコンポーネント(現在空)
 │   ├── search/             # 検索関連のコンポーネント (FacilityCard, SearchResultsなど)
 │   └── ui/                 # 汎用的なUI要素 (Button, Card, Inputなど（現在toggleswitchのみ）)
+├── hooks/                  # カスタムReactフック
 ├── lib/                    # ユーティリティ関数や外部サービス連携ロジック
-│   ├── hooks/              # カスタムReactフック
 │   ├── supabase/           # Supabaseクライアントの初期化と関連ロジック (client.ts, server.ts)
 │   └── utils/              # 汎用ユーティリティ (constants, helpers, validationなど)
 ├── pages/                  # Next.jsのページコンポーネントとAPIルート
@@ -48,6 +48,7 @@
 ├── public/                 # 静的ファイル (画像など)
 ├── scripts/                # supabaseへの接続、地区やサービスの設定、重複登録対策のユニークキー
 ├── styles/                 # グローバルスタイルやTailwind CSSの設定
+├── types/                  # TypeScriptの型定義
 ├── wamnet.csv              # 事業所データ（CSV形式）
 ├── next.config.ts          # Next.jsの設定ファイル
 ├── package.json            # プロジェクトの依存関係とスクリプト

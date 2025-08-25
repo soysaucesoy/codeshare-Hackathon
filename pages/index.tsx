@@ -6,6 +6,9 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
+import Header from '../components/layout/Header';
+import { useDevice } from '../hooks/useDevice';
+
 
 // 地図コンポーネントを動的インポート（SSR対応）
 const MapView = dynamic(() => import('../components/search/MapView'), {
@@ -541,6 +544,7 @@ const SearchFilterComponent: React.FC<{
 };
 
 // ページネーションコンポーネント
+// ブックマーク機能付きFacilityCardコンポーネント（検索状態保持対応）
 const Pagination: React.FC<{
   pagination: SearchResponse['pagination'];
   onPageChange: (page: number) => void;
@@ -656,7 +660,6 @@ const Pagination: React.FC<{
   );
 };
 
-// ブックマーク機能付きFacilityCardコンポーネント（検索状態保持対応）
 const FacilityCard: React.FC<{ 
   facility: Facility;
   isLoggedIn: boolean;
@@ -664,12 +667,153 @@ const FacilityCard: React.FC<{
   onBookmarkToggle: (facilityId: number) => void;
   searchParams?: string;
 }> = ({ facility, isLoggedIn, isBookmarked, onBookmarkToggle, searchParams = '' }) => {
+  const { isMobile } = useDevice(); // デバイス判定フックを使用
+  
   const availableServices = facility.services?.filter(s => s.availability === 'available') || [];
   const unavailableServices = facility.services?.filter(s => s.availability === 'unavailable') || [];
-  
-  // 詳細ページのURLに検索パラメータを付加
   const detailUrl = `/facilities/${facility.id}${searchParams ? `?${searchParams}` : ''}`;
   
+  // スマホ版の簡略表示
+  if (isMobile) {
+    return (
+      <div className="facility-card" style={{ 
+        backgroundColor: 'white',
+        borderRadius: '0.75rem',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        padding: '1rem',
+        marginBottom: '1rem',
+        position: 'relative'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* 施設名とブックマーク */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'flex-start',
+            gap: '0.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '1.125rem',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0,
+              lineHeight: 1.3,
+              flex: 1
+            }}>
+              {facility.name}
+            </h3>
+            {isLoggedIn && (
+              <button
+                onClick={() => onBookmarkToggle(facility.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  borderRadius: '0.25rem',
+                  color: isBookmarked ? '#eab308' : '#9ca3af',
+                  fontSize: '1.25rem',
+                  transition: 'all 0.2s',
+                  flexShrink: 0
+                }}
+                title={isBookmarked ? 'ブックマークから削除' : 'ブックマークに追加'}
+              >
+                {isBookmarked ? '★' : '☆'}
+                <span style={{fontSize: '0.75rem', marginLeft: '0.25rem'}}>
+                {isBookmarked ? '保存済み' : '保存'}
+                </span>
+                </button>
+            )}
+          </div>
+          
+          {/* 地区名 */}
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#6b7280',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem'
+          }}>
+            📍 {facility.district}
+          </p>
+
+          {/* 提供サービス（簡略版） */}
+          <div>
+            <div style={{ 
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.5rem'
+            }}>
+              提供サービス
+            </div>
+            <div style={{ 
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.25rem'
+            }}>
+              {/* 利用可能なサービスを最大2つまで表示 */}
+              {availableServices.slice(0, 2).map((service, index) => (
+                <span
+                  key={index}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.25rem 0.5rem',
+                    background: '#dcfce7',
+                    color: '#166534',
+                    borderRadius: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  ◯ {service.service?.name || 'サービス'}
+                </span>
+              ))}
+              
+              {/* サービス数が2つ以上ある場合は「他X件」を表示 */}
+              {(availableServices.length + unavailableServices.length) > 2 && (
+                <span style={{
+                  padding: '0.25rem 0.5rem',
+                  background: '#f3f4f6',
+                  color: '#6b7280',
+                  borderRadius: '1rem',
+                  fontSize: '0.75rem'
+                }}>
+                  他{(availableServices.length + unavailableServices.length) - 2}件
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 詳細ボタン */}
+          <Link href={detailUrl} passHref legacyBehavior>
+            <a style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'center',
+              padding: '0.75rem',
+              background: '#22c55e',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '0.5rem',
+              fontWeight: '500',
+              fontSize: '0.875rem',
+              transition: 'background-color 0.2s',
+              marginTop: '0.5rem'
+            }}>
+              詳細を見る
+            </a>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+
+  // PC・タブレット版は既存の表示を維持
   return (
     <div className="facility-card">
       <div className="facility-image">
@@ -784,7 +928,7 @@ const FacilityCard: React.FC<{
       </div>
     </div>
   );
-};
+}; 
 
 // SearchResultsコンポーネント（検索状態保持対応）
 const SearchResults: React.FC<{
@@ -982,7 +1126,12 @@ const SearchResults: React.FC<{
   );
 };
 
+
+
 // メインページ（検索状態復元機能付き）
+// 以下は（最後の1行を除き）メインについて
+// コードを捜索中の時のための目印
+
 const HomePage: React.FC = () => {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuthContext();
@@ -1258,8 +1407,10 @@ const HomePage: React.FC = () => {
     }
   };
 
+//以上、const(関数たち)
+//以下はreturn
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Head>
         <title>ケアコネクト - 東京都障害福祉サービス事業所検索</title>
         <meta 
@@ -1269,69 +1420,15 @@ const HomePage: React.FC = () => {
       </Head>
 
       {/* ヘッダー */}
-      <header className="header">
-        <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <Link href="/" passHref legacyBehavior>
-              <a className="logo-container" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                <div className="logo">C</div>
-                <div>
-                  <h1 className="main-title">ケアコネクト</h1>
-                </div>
-              </a>
-            </Link>
-            <h2 style={{ fontSize: '16px', margin: 0 }}>東京都の障害福祉サービス事業所検索システム</h2>
-            
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {!isLoggedIn ? (
-                <>
-                  <Link href="/auth/login">
-                    <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                      利用者ログイン
-                    </button>
-                  </Link>
-                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
-                  <Link href="/provider/login">
-                    <button className="cta-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                      事業者ログイン
-                    </button>
-                  </Link>
-                  <span style={{ color: '#d1d5db', fontSize: '1rem' }}>|</span>
-                </>
-              ) : (
-                <>
-                  <Link href="/mypage" passHref legacyBehavior>
-                    <a className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                      マイページ
-                    </a>
-                  </Link>
-                  <button
-                    className="cta-secondary"
-                    style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                    onClick={async () => {
-                      const { error } = await signOut();
-                      if (error) {
-                        console.error("ログアウトエラー:", error.message);
-                        alert("ログアウトに失敗しました");
-                      } else {
-                        alert("ログアウトしました");
-                      }
-                    }}
-                  >
-                    ログアウト
-                  </button>
-                </>
-              )}
-              <button className="cta-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-                お問い合わせ
-              </button>
-            </div>
-          </div>
-        </div>        
-      </header>
+      <Header 
+      isLoggedIn={isLoggedIn}
+      signOut={signOut}
+      variant="home"           // ホームページ仕様
+      showContactButton={true} // お問い合わせボタン表示
+      />
 
       {/* メインコンテンツ */}
-      <main className="container">
+      <main className="container mx-auto px-4 py-8">
         {isLoggedIn && (
           <section style={{ marginTop: '2rem', paddingBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '2rem' }}>
@@ -1461,8 +1558,17 @@ const HomePage: React.FC = () => {
             <div className="footer-copyright">
               © 2025 ケアコネクト. All rights reserved.
             </div>
-          </div>
+            <div className="footer-links">
+            <a 
+             href="https://www.wam.go.jp/content/wamnet/pcpub/top/sfkopendata/" 
+             target="_blank"
+             rel="noopener noreferrer"
+            >
+            障害福祉サービス等情報公表システムデータのオープンデータより抜粋して作成
+            </a>
+            </div>
         </div>
+      </div> 
       </footer>
     </div>
   );

@@ -13,6 +13,7 @@ import { useAuthContext } from '@/components/providers/AuthProvider'
 import { useBookmarks } from '@/lib/hooks/useBookmarks'
 import { supabase } from '@/lib/supabase/client'
 import { TokyoDistrict, DisabilityType } from '@/types/database'
+import Header from '../../components/layout/Header';
 
 const TOKYO_DISTRICTS: TokyoDistrict[] = [
   // 23区
@@ -143,6 +144,8 @@ const MyPageButton: React.FC<{
   )
 }
 
+// マイページコンポーネント
+// ここからマイページ
 const UserMyPage: React.FC = () => {
   const router = useRouter()
   const { user, signOut } = useAuthContext()
@@ -409,7 +412,7 @@ const UserMyPage: React.FC = () => {
   }
 
   // 修正されたhandleProfileSubmit関数
-const handleProfileSubmit = async (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
   if (!user) return
   
@@ -594,7 +597,7 @@ const handleProfileSubmit = async (e: React.FormEvent) => {
   } finally {
     setLoading(false)
   }
-}
+  }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -769,7 +772,10 @@ const handleProfileSubmit = async (e: React.FormEvent) => {
       </div>
     )
   }
+  const isLoggedIn = !!user
 
+  //こっからreturn
+  //目印
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
       <Head>
@@ -777,30 +783,12 @@ const handleProfileSubmit = async (e: React.FormEvent) => {
       </Head>
 
       {/* ヘッダー */}
-      <header style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 0' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '80rem', margin: '0 auto', padding: '0 1rem' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
-            <div style={{
-              width: '2.5rem', height: '2.5rem', background: '#22c55e', borderRadius: '0.5rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.125rem', fontWeight: 'bold'
-            }}>C</div>
-            <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>ケアコネクト</span>
-          </Link>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Link href="/" style={{ color: '#6b7280', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <Home size={16} />
-              トップページ
-            </Link>
-            <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              {profileData.full_name || 'ユーザー'}さん
-            </span>
-            <MyPageButton variant="secondary" onClick={handleLogout}>
-              ログアウト
-            </MyPageButton>
-          </div>
-        </div>
-      </header>
+      <Header 
+      isLoggedIn={isLoggedIn}
+      signOut={signOut}
+      variant="mypage"           // mypage仕様
+      showContactButton={true} // お問い合わせボタン表示
+      />
 
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem 1rem' }}>
         {/* ページタイトル */}
