@@ -1,6 +1,6 @@
-// components/dm/ConversationList.tsx
+// components/dm/ConversationList.tsx - 完全修正版
 import React from 'react';
-import { MessageCircle, User } from 'lucide-react';
+import { MessageCircle, User, Building2 } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { type Conversation } from '@/lib/hooks/useMessages';
 
@@ -9,24 +9,37 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void;
   selectedConversationId?: string;
   loading?: boolean;
+  userType?: 'user' | 'facility';
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
   onSelectConversation,
   selectedConversationId,
-  loading = false
+  loading = false,
+  userType = 'user'
 }) => {
   const { user } = useAuthContext();
 
   const getOtherPartyInfo = (conversation: Conversation) => {
-    if (!user) return { name: '', subtitle: '' };
+    if (!user) return { name: '', subtitle: '', icon: User };
     
-    // 利用者用のDMシステムなので、常に事業所名を表示
-    return {
-      name: conversation.facility?.name || '事業所',
-      subtitle: ''
-    };
+    // ユーザータイプに応じて表示を切り替え
+    if (userType === 'facility') {
+      // 事業所側：利用者名を表示
+      return {
+        name: conversation.user?.full_name || conversation.user?.email || '利用者',
+        subtitle: conversation.user?.district ? `地域: ${conversation.user.district}` : '',
+        icon: User
+      };
+    } else {
+      // 利用者側：事業所名を表示
+      return {
+        name: conversation.facility?.name || '事業所',
+        subtitle: conversation.facility?.district ? `地域: ${conversation.facility.district}` : '',
+        icon: Building2
+      };
+    }
   };
 
   const formatLastMessageTime = (timestamp: string) => {
@@ -76,7 +89,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
           メッセージがありません
         </h3>
         <p style={{ margin: 0, fontSize: '0.875rem' }}>
-          事業所の詳細ページからメッセージを送信してみましょう
+          {userType === 'facility' 
+            ? '利用者からのメッセージがここに表示されます'
+            : '事業所の詳細ページからメッセージを送信してみましょう'
+          }
         </p>
       </div>
     );
@@ -96,9 +112,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {conversations.map((conversation) => {
           const otherParty = getOtherPartyInfo(conversation);
+          const IconComponent = otherParty.icon;
           const isSelected = conversation.id === selectedConversationId;
           const isUnread = conversation.last_message && 
-                          conversation.last_message.sender_id !== user?.id;
+                          conversation.last_message.sender_id !== user?.id &&
+                          !conversation.last_message.is_read;
 
           return (
             <button
@@ -114,7 +132,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 borderLeft: isSelected ? '4px solid #22c55e' : '4px solid transparent',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                width: '100%'
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -139,7 +158,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 color: isSelected ? 'white' : '#6b7280',
                 flexShrink: 0
               }}>
-                <User size={24} />
+                <IconComponent size={24} />
               </div>
 
               {/* 内容 */}
@@ -188,7 +207,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     <p style={{
                       margin: 0,
                       fontSize: '0.875rem',
-                      color: '#6b7280',
+                      color: isUnread ? '#374151' : '#6b7280',
+                      fontWeight: isUnread ? 500 : 400,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',

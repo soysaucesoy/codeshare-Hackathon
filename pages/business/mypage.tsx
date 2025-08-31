@@ -1764,29 +1764,31 @@ const FacilityMyPage: React.FC = () => {
           )}
 
           {/* メッセージタブ */}
-          {activeTab === 'messages' && (
-            <div>
-              {showMessageThread && selectedConversation ? (
-                <MessageThread
-                  conversation={selectedConversation}
-                  onClose={() => {
-                    setShowMessageThread(false)
-                    setSelectedConversation(null)
-                  }}
-                />
-              ) : (
-                <ConversationList
-                  conversations={conversations}
-                  onSelectConversation={(conversation) => {
-                    setSelectedConversation(conversation)
-                    setShowMessageThread(true)
-                  }}
-                  selectedConversationId={selectedConversation?.id}
-                  loading={messagesLoading}
-                />
-              )}
-            </div>
-          )}
+{activeTab === 'messages' && (
+  <div>
+    {showMessageThread && selectedConversation ? (
+      <MessageThread
+        conversation={selectedConversation}
+        onClose={() => {
+          setShowMessageThread(false)
+          setSelectedConversation(null)
+        }}
+        userType="facility"  // 事業所タイプを指定
+      />
+    ) : (
+      <ConversationList
+        conversations={conversations}
+        onSelectConversation={(conversation) => {
+          setSelectedConversation(conversation)
+          setShowMessageThread(true)
+        }}
+        selectedConversationId={selectedConversation?.id}
+        loading={messagesLoading}
+        userType="facility"  // 事業所タイプを指定
+      />
+    )}
+  </div>
+)}
         </div>
       </div>
 

@@ -391,7 +391,12 @@ const UserMyPage: React.FC = () => {
       handleFacilityMessage()
     }
   }, [router.query, user, getOrCreateConversation, fetchConversations])
-
+  // pages/mypage/index.tsx の修正
+useEffect(() => {
+  if (activeTab === 'messages' && user) {
+    fetchConversations();
+  }
+}, [activeTab, user, fetchConversations]);
   // ブックマーク読み込み
   useEffect(() => {
     const loadBookmarkedFacilities = async () => {
@@ -1580,29 +1585,31 @@ const UserMyPage: React.FC = () => {
           )}
 
           {/* メッセージタブ */}
-          {activeTab === 'messages' && (
-            <div>
-              {showMessageThread && selectedConversation ? (
-                <MessageThread
-                  conversation={selectedConversation}
-                  onClose={() => {
-                    setShowMessageThread(false)
-                    setSelectedConversation(null)
-                  }}
-                />
-              ) : (
-                <ConversationList
-                  conversations={conversations}
-                  onSelectConversation={(conversation) => {
-                    setSelectedConversation(conversation)
-                    setShowMessageThread(true)
-                  }}
-                  selectedConversationId={selectedConversation?.id}
-                  loading={messagesLoading}
-                />
-              )}
-            </div>
-          )}
+{activeTab === 'messages' && (
+  <div>
+    {showMessageThread && selectedConversation ? (
+      <MessageThread
+        conversation={selectedConversation}
+        onClose={() => {
+          setShowMessageThread(false)
+          setSelectedConversation(null)
+        }}
+        userType="user"  // 利用者タイプを指定
+      />
+    ) : (
+      <ConversationList
+        conversations={conversations}
+        onSelectConversation={(conversation) => {
+          setSelectedConversation(conversation)
+          setShowMessageThread(true)
+        }}
+        selectedConversationId={selectedConversation?.id}
+        loading={messagesLoading}
+        userType="user"  // 利用者タイプを指定
+      />
+    )}
+  </div>
+)}
         </div>
       </div>
 

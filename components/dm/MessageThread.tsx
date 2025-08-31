@@ -1,15 +1,20 @@
-// components/dm/MessageThread.tsx
+// components/dm/MessageThread.tsx - 完全修正版
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, ArrowLeft, User } from 'lucide-react';
+import { Send, ArrowLeft, User, Building2 } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useMessages, type Message, type Conversation } from '@/lib/hooks/useMessages';
 
 interface MessageThreadProps {
   conversation: Conversation;
   onClose: () => void;
+  userType?: 'user' | 'facility';
 }
 
-const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) => {
+const MessageThread: React.FC<MessageThreadProps> = ({ 
+  conversation, 
+  onClose,
+  userType = 'user'
+}) => {
   const { user } = useAuthContext();
   const { messages, fetchMessages, sendMessage, loading } = useMessages();
   const [newMessage, setNewMessage] = useState('');
@@ -19,6 +24,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
   // メッセージを取得
   useEffect(() => {
     if (conversation.id) {
+      console.log('MessageThread: 会話IDでメッセージ取得:', conversation.id);
       fetchMessages(conversation.id);
     }
   }, [conversation.id, fetchMessages]);
@@ -49,18 +55,34 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
     }
   };
 
-  const getOtherPartyName = () => {
-    if (!user) return '';
+  const getOtherPartyInfo = () => {
+    if (!user) return { name: '', subtitle: '', icon: User };
     
-    // 利用者が見る場合は事業所名を表示
-    return conversation.facility?.name || '事業所';
+    if (userType === 'facility') {
+      // 事業所側：利用者情報を表示
+      return {
+        name: conversation.user?.full_name || conversation.user?.email || '利用者',
+        subtitle: conversation.user?.district ? `地域: ${conversation.user.district}` : '',
+        icon: User
+      };
+    } else {
+      // 利用者側：事業所情報を表示
+      return {
+        name: conversation.facility?.name || '事業所',
+        subtitle: conversation.facility?.district ? `地域: ${conversation.facility.district}` : '',
+        icon: Building2
+      };
+    }
   };
+
+  const otherParty = getOtherPartyInfo();
+  const IconComponent = otherParty.icon;
 
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: '100%',
+      height: '600px',
       background: 'white',
       borderRadius: '0.5rem',
       border: '1px solid #e5e7eb'
@@ -101,7 +123,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
             justifyContent: 'center',
             color: 'white'
           }}>
-            <User size={20} />
+            <IconComponent size={20} />
           </div>
           <div>
             <h3 style={{ 
@@ -110,15 +132,17 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
               fontWeight: 600, 
               color: '#111827' 
             }}>
-              {getOtherPartyName()}
+              {otherParty.name}
             </h3>
-            <p style={{ 
-              margin: 0, 
-              fontSize: '0.875rem', 
-              color: '#6b7280' 
-            }}>
-              {conversation.facility?.name && `事業所: ${conversation.facility.name}`}
-            </p>
+            {otherParty.subtitle && (
+              <p style={{ 
+                margin: 0, 
+                fontSize: '0.875rem', 
+                color: '#6b7280' 
+              }}>
+                {otherParty.subtitle}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -127,8 +151,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
       <div style={{
         flex: 1,
         padding: '1rem',
-        overflowY: 'auto',
-        maxHeight: '400px'
+        overflowY: 'auto'
       }}>
         {loading ? (
           <div style={{ textAlign: 'center', color: '#6b7280' }}>
@@ -169,7 +192,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
                     <p style={{ 
                       margin: 0, 
                       fontSize: '0.875rem',
-                      lineHeight: '1.5'
+                      lineHeight: '1.5',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word'
                     }}>
                       {message.content}
                     </p>
