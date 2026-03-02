@@ -290,8 +290,7 @@ function MobileHeader({
               
               {/* ヘルプボタン */}
               {showHelpButton && (
-                <Link
-                  href=""
+                <button
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -300,11 +299,12 @@ function MobileHeader({
                     padding: '0.75rem',
                     background: '#f3f4f6', 
                     color: '#374151', 
-                    textDecoration: 'none',
                     borderRadius: '0.375rem',
                     textAlign: 'center',
                     fontWeight: '500',
-                    border: '1px solid #d1d5db'
+                    border: '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    width: '100%'
                   }}
                   onClick={() => {
                     setIsMenuOpen(false);
@@ -313,7 +313,7 @@ function MobileHeader({
                 >
                   <HelpCircle size={16} />
                   ヘルプ
-                </Link>
+                </button>
               )}
 
               {/* お問い合わせボタン */}
@@ -547,21 +547,21 @@ function DesktopHeader({
                 ログアウト
               </button>
 
-              {/* ▼▼▼ 追加 ▼▼▼ */}
               {/* ヘルプボタン（ログイン時） */}
               {showHelpButton && (
-                <Link
-                  href="/help"
+                <button
+                  onClick={() => onHelpClick?.()}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     fontSize: '0.875rem',
                     color: '#6b7280',
-                    textDecoration: 'none',
+                    background: 'none',
                     padding: '0.5rem 1rem',
                     borderRadius: '0.375rem',
                     border: '1px solid #d1d5db',
+                    cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
@@ -577,9 +577,8 @@ function DesktopHeader({
                 >
                   <HelpCircle size={16} />
                   ヘルプ
-                </Link>
+                </button>
               )}
-              {/* ▲▲▲ 追加 ▲▲▲ */}
 
               {/* お問い合わせボタン（ログイン時） */}
               {showContactButton && (
