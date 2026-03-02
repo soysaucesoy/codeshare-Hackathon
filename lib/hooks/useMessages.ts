@@ -93,14 +93,14 @@ export function useMessages() {
             console.error('事業所情報取得エラー:', facilityError, 'facility_id:', conv.facility_id);
           }
 
-          // 最後のメッセージを取得
+          // 最後のメッセージを取得（メッセージが0件の場合でもエラーにならないよう maybeSingle を使用）
           const { data: lastMessage } = await supabase
             .from('messages')
             .select('content, sender_id, is_read')
             .eq('conversation_id', conv.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           // この会話の未読メッセージ数を取得
           const { count: unreadCount } = await supabase

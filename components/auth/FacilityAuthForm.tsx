@@ -300,18 +300,6 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
 
           {/* タブコンテンツ */}
           <div style={{ padding: '2rem' }}>
-            {/* タブコンテンツヘッダー */}
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.5rem' }}>
-                {activeTab === 'login' ? '事業者ログイン' : '事業者アカウント作成'}
-              </h2>
-              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                {activeTab === 'login' 
-                  ? '事業者アカウントにログインしてご利用ください' 
-                  : '事業者情報を入力してアカウントを作成してください'
-                }
-              </p>
-            </div>
 
           {/* エラー・成功メッセージ */}
           {error && (
@@ -346,7 +334,7 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
           {/* ログインフォーム */}
           {activeTab === 'login' && (
             <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Mail size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   メールアドレス
@@ -358,11 +346,11 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                   onChange={handleLoginChange}
                   placeholder="business@email.com"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
               </div>
 
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Lock size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   パスワード
@@ -375,14 +363,14 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                     onChange={handleLoginChange}
                     placeholder="password"
                     required
-                    style={{ paddingRight: '2.5rem', width: '12rem' }}
+                    style={{ paddingRight: '2.5rem', width: '100%', fontSize: '1rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute',
-                      right: '6rem',
+                      right: '0.5rem',
                       top: '60%',
                       transform: 'translateY(-50%)',
                       background: 'none',
@@ -427,29 +415,13 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                   'ログイン'
                 )}
               </Button>
-
-              {/* パスワードを忘れた場合 */}
-              <div style={{ textAlign: 'center' }}>
-                <a 
-                  href="/auth/forgot-password" 
-                  style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    textDecoration: 'none' 
-                  }}
-                  onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#22c55e'}
-                  onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#6b7280'}
-                >
-                  パスワードをお忘れの場合
-                </a>
-              </div>
             </form>
           )}
 
           {/* 新規登録フォーム */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <User size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   担当者名 <span style={{ color: '#ef4444' }}>*</span>
@@ -459,16 +431,16 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                   type="text"
                   value={registerData.fullName}
                   onChange={handleRegisterChange}
-                  placeholder="山田 太郎"
+                  placeholder="山田太郎"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
                 <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
                   事業所の担当者名を入力してください
                 </p>
               </div>
 
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Mail size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   メールアドレス <span style={{ color: '#ef4444' }}>*</span>
@@ -480,11 +452,11 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                   onChange={handleRegisterChange}
                   placeholder="business@email.com"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
               </div>
 
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Lock size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   パスワード <span style={{ color: '#ef4444' }}>*</span>
@@ -497,14 +469,14 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                     onChange={handleRegisterChange}
                     placeholder="password"
                     required
-                    style={{ paddingRight: '2.5rem', width: '12rem' }}
+                    style={{ paddingRight: '2.5rem', width: '100%', fontSize: '1rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute',
-                      right: '6rem',
+                      right: '0.5rem',
                       top: '60%',
                       transform: 'translateY(-50%)',
                       background: 'none',
@@ -581,9 +553,9 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                 textAlign: 'center'
               }}>
                 アカウント作成により、
-                <a href="/terms" style={{ color: '#22c55e', textDecoration: 'none' }}>利用規約</a>
+                <a href="https://github.com/soysaucesoy/codeshare-Hackathon" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', textDecoration: 'none' }}>利用規約</a>
                 と
-                <a href="/privacy" style={{ color: '#22c55e', textDecoration: 'none' }}>プライバシーポリシー</a>
+                <a href="https://github.com/soysaucesoy/codeshare-Hackathon" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', textDecoration: 'none' }}>プライバシーポリシー</a>
                 に同意したものとみなされます
               </div>
             </form>
@@ -622,12 +594,12 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
             お困りの場合は{' '}
-            <a 
-              href="mailto:support@care-connect.jp" 
+            <Link
+              href="/contact"
               style={{ color: '#22c55e', textDecoration: 'none' }}
             >
               サポートまでお問い合わせください
-            </a>
+            </Link>
           </p>
         </div>
       </div>

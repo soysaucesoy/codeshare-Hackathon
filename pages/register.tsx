@@ -4,48 +4,9 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { T_DISTRICTS, SERVICE_CATEGORIES } from '@/types/database';
 
-// 型定義
-interface ServiceOption {
-  id: number;
-  name: string;
-  category: string;
-}
-
-const SERVICE_CATEGORIES: { [key: string]: ServiceOption[] } = {
-  '訪問系サービス': [
-    { id: 1, name: '居宅介護', category: '訪問系サービス' },
-    { id: 2, name: '重度訪問介護', category: '訪問系サービス' },
-    { id: 3, name: '同行援護', category: '訪問系サービス' },
-    { id: 4, name: '行動援護', category: '訪問系サービス' },
-  ],
-  '日中活動系サービス': [
-    { id: 6, name: '療養介護', category: '日中活動系サービス' },
-    { id: 7, name: '生活介護', category: '日中活動系サービス' },
-    { id: 8, name: '短期入所', category: '日中活動系サービス' },
-  ],
-  '居住系サービス': [
-    { id: 10, name: '共同生活援助', category: '居住系サービス' },
-    { id: 11, name: '自立生活援助', category: '居住系サービス' },
-  ],
-  '訓練系・就労系サービス': [
-    { id: 15, name: '就労移行支援', category: '訓練系・就労系サービス' },
-    { id: 16, name: '就労継続支援A型', category: '訓練系・就労系サービス' },
-    { id: 17, name: '就労継続支援B型', category: '訓練系・就労系サービス' },
-    { id: 18, name: '就労定着支援', category: '訓練系・就労系サービス' },
-  ],
-  '障害児通所系サービス': [
-    { id: 19, name: '児童発達支援', category: '障害児通所系サービス' },
-    { id: 21, name: '放課後等デイサービス', category: '障害児通所系サービス' },
-  ],
-};
-
-const districts = [
-    '千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区',
-    '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区',
-    '杉並区', '豊島区', '北区', '荒川区', '板橋区', '練馬区', '足立区',
-    '葛飾区', '江戸川区'
-];
+const districts = T_DISTRICTS;
 
 const RegisterPage: React.FC = () => {
   const router = useRouter();

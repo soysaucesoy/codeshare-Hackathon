@@ -145,6 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // 認証が必要なルート（未ログイン時にトップへリダイレクト）
+  const protectedRoutes = ['/dashboard', '/mypage', '/business/mypage'];
+
   // 認証状態に応じたリダイレクトを管理する統合されたuseEffect
   useEffect(() => {
     if (loading || isRedirecting) return; // 読み込み中またはリダイレクト中はなにもしない
@@ -158,8 +161,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await router.replace(targetPath);
           setIsRedirecting(false);
         }
-      } else { // ログアウト後
-        if (!router.pathname.startsWith('/auth') && router.pathname !== '/') {
+      } else { // 未ログイン時：認証が必要なページのみトップへリダイレクト
+        const isProtected = protectedRoutes.some(route =>
+          router.pathname === route || router.pathname.startsWith(route + '/')
+        );
+        if (isProtected) {
           setIsRedirecting(true);
           await router.replace('/');
           setIsRedirecting(false);
