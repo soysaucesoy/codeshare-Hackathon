@@ -553,9 +553,9 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
                 textAlign: 'center'
               }}>
                 アカウント作成により、
-                <a href="/terms" style={{ color: '#22c55e', textDecoration: 'none' }}>利用規約</a>
+                <a href="https://github.com/soysaucesoy/codeshare-Hackathon" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', textDecoration: 'none' }}>利用規約</a>
                 と
-                <a href="/privacy" style={{ color: '#22c55e', textDecoration: 'none' }}>プライバシーポリシー</a>
+                <a href="https://github.com/soysaucesoy/codeshare-Hackathon" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', textDecoration: 'none' }}>プライバシーポリシー</a>
                 に同意したものとみなされます
               </div>
             </form>
@@ -594,12 +594,12 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
             お困りの場合は{' '}
-            <a 
-              href="mailto:support@care-connect.jp" 
+            <Link
+              href="/contact"
               style={{ color: '#22c55e', textDecoration: 'none' }}
             >
               サポートまでお問い合わせください
-            </a>
+            </Link>
           </p>
         </div>
       </div>
