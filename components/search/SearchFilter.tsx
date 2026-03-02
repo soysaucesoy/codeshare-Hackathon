@@ -76,7 +76,6 @@ const SearchFilterComponent: React.FC<{
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <span className="search-icon">🔍</span>
       </div>
 
       <div className="filters-section">

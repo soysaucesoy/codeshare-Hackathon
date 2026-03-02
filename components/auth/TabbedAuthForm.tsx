@@ -287,7 +287,7 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
         </div>
       )}
 
-      <div style={{ maxWidth: '28rem', width: '100%' }}>
+      <div style={{ maxWidth: '32rem', width: '100%' }}>
         {/* ヘッダーナビゲーション */}
         <div style={{ 
           display: 'flex', 
@@ -372,6 +372,16 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
 
         {/* メインコンテンツヘッダー */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <User size={28} style={{ color: '#22c55e' }} />
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+              利用者向けサービス
+            </h1>
+          </div>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            施設の検索・ブックマークや事業所へのメッセージ送信ができます
+          </p>
+        </div>
         <div style={{ background: 'white', borderRadius: '0.75rem', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
           {/* タブヘッダー */}
           <div style={{ 
@@ -419,18 +429,6 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
 
           {/* タブコンテンツ */}
           <div style={{ padding: '2rem' }}>
-            {/* タブコンテンツヘッダー */}
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.5rem' }}>
-                {activeTab === 'login' ? 'ログイン' : '新規アカウント作成'}
-              </h2>
-              <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                {activeTab === 'login' 
-                  ? 'アカウントにログインしてご利用ください' 
-                  : '基本情報を入力してアカウントを作成してください'
-                }
-              </p>
-            </div>
 
           {/* エラー・成功メッセージ */}
           {error && (
@@ -465,7 +463,7 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
           {/* ログインフォーム */}
           {activeTab === 'login' && (
             <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Mail size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   メールアドレス
@@ -477,11 +475,11 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                   onChange={handleLoginChange}
                   placeholder="example@email.com"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
               </div>
 
-              <div>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Lock size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   パスワード
@@ -494,14 +492,14 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                     onChange={handleLoginChange}
                     placeholder="password"
                     required
-                    style={{ paddingRight: '2.5rem', width: '12rem'}}
+                    style={{ paddingRight: '2.5rem', width: '100%', fontSize: '1rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute',
-                      right: '4.1rem',
+                      right: '0.5rem',
                       top: '60%',
                       transform: 'translateY(-50%)',
                       background: 'none',
@@ -546,29 +544,13 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                   'ログイン'
                 )}
               </Button>
-
-              {/* パスワードを忘れた場合 */}
-              <div style={{ textAlign: 'center' }}>
-                <a 
-                  href="/auth/forgot-password" 
-                  style={{ 
-                    fontSize: '0.875rem', 
-                    color: '#6b7280', 
-                    textDecoration: 'none' 
-                  }}
-                  onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#22c55e'}
-                  onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#6b7280'}
-                >
-                  パスワードをお忘れの場合
-                </a>
-              </div>
             </form>
           )}
 
           {/* 新規登録フォーム */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <User size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   お名前 <span style={{ color: '#ef4444' }}>*</span>
@@ -578,13 +560,13 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                   type="text"
                   value={registerData.fullName}
                   onChange={handleRegisterChange}
-                  placeholder="山田 太郎"
+                  placeholder="山田太郎"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
               </div>
 
-              <div>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Mail size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   メールアドレス <span style={{ color: '#ef4444' }}>*</span>
@@ -596,11 +578,11 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                   onChange={handleRegisterChange}
                   placeholder="example@email.com"
                   required
-                  style={{ width: '12rem' }}
+                  style={{ width: '100%', fontSize: '1rem' }}
                 />
               </div>
 
-              <div>
+              <div style={{ width: '100%' }}>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   <Lock size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                   パスワード <span style={{ color: '#ef4444' }}>*</span>
@@ -613,14 +595,14 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
                     onChange={handleRegisterChange}
                     placeholder="6文字以上で入力"
                     required
-                    style={{ paddingRight: '2.5rem', width: '12rem' }}
+                    style={{ paddingRight: '2.5rem', width: '100%', fontSize: '1rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute',
-                      right: '3.9rem',
+                      right: '0.5rem',
                       top: '60%',
                       transform: 'translateY(-50%)',
                       background: 'none',
@@ -698,7 +680,7 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
               border: '1px solid #bbf7d0'
             }}>
               <p style={{ fontSize: '0.875rem', color: '#166534', margin: '0 0 0.5rem 0', fontWeight: 500 }}>
-                👀 ログインなしでも利用できます
+                ログインなしでも利用できます
               </p>
               <Link 
                 href="/" 
@@ -714,7 +696,6 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
             </div>
           </div>
         </div>
-     </div>
 
         {/* フッター情報 */}
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
