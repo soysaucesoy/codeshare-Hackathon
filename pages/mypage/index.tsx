@@ -15,7 +15,6 @@ import { useMessages } from '@/lib/hooks/useMessages'
 import { supabase } from '@/lib/supabase/client'
 import { TokyoDistrict, DisabilityType } from '@/types/database'
 import Header from '../../components/layout/Header'
-import HelpModal from '../../components/layout/HelpModal'
 import ConversationList from '@/components/dm/ConversationList'
 import MessageThread from '@/components/dm/MessageThread'
 
@@ -213,7 +212,6 @@ const UserMyPage: React.FC = () => {
   })
 
   const [bookmarkedFacilities, setBookmarkedFacilities] = useState<any[]>([])
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
 
   // 初期データ読み込み
   useEffect(() => {
@@ -869,7 +867,6 @@ const UserMyPage: React.FC = () => {
         signOut={signOut}
         variant="mypage"
         showContactButton={true}
-        onHelpClick={() => setIsHelpModalOpen(true)}
       />
 
       <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -1649,8 +1646,6 @@ const UserMyPage: React.FC = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
-
-      <HelpModal open={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
     </div>
   )
 }

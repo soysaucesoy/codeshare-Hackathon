@@ -1,20 +1,20 @@
 // components/layout/Header.tsx - スマホ対応版
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { User, LogOut, Building2, Users, HelpCircle } from 'lucide-react' // HelpCircle をインポート
+import { User, LogOut, Building2, Users, HelpCircle } from 'lucide-react'
 import { useAuthContext } from '@/components/providers/AuthProvider'
 import { getMyPagePath, getUserType } from '@/lib/utils/userType'
 import { useDevice } from '../../hooks/useDevice'
+import HelpModal from './HelpModal'
 
 interface HeaderProps {
   isLoggedIn: boolean
   signOut: () => Promise<{ error?: any }>
   variant?: 'home' | 'mypage'
   showContactButton?: boolean
-  showHelpButton?: boolean // ヘルプボタン表示用のPropを追加
+  showHelpButton?: boolean
   customTitle?: string
-  hideSubtitle?: boolean  
-  onHelpClick?: () => void // ヘルプボタンのクリックハンドラ
+  hideSubtitle?: boolean
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -22,35 +22,39 @@ const Header: React.FC<HeaderProps> = ({
   signOut, 
   variant = 'home', 
   showContactButton = true, 
-  showHelpButton = true, // Propのデフォルト値を追加
+  showHelpButton = true,
   customTitle,
   hideSubtitle = false,
-  onHelpClick
 }) => {
   const { user } = useAuthContext()
   const { isMobile } = useDevice()
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
   
   const userType = getUserType(user)
   const myPagePath = getMyPagePath(user)
+
+  const onHelpClick = () => setIsHelpModalOpen(true)
 
   const commonProps = {
     isLoggedIn,
     signOut,
     variant,
     showContactButton,
-    showHelpButton, // commonPropsに追加
+    showHelpButton,
     customTitle,
     hideSubtitle,
     user,
     userType,
     myPagePath,
-    onHelpClick
+    onHelpClick,
   }
 
-  if (isMobile) {
-    return <MobileHeader {...commonProps} />
-  }
-  return <DesktopHeader {...commonProps} />
+  return (
+    <>
+      {isMobile ? <MobileHeader {...commonProps} /> : <DesktopHeader {...commonProps} />}
+      <HelpModal open={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
+    </>
+  )
 }
 
 // スマホ版ヘッダー
@@ -674,18 +678,18 @@ function DesktopHeader({
               
               {/* ヘルプボタン（ログアウト時） */}
               {showHelpButton && (
-                <Link
-                  href=""
+                <button
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     fontSize: '0.875rem',
                     color: '#6b7280',
-                    textDecoration: 'none',
+                    background: 'none',
                     padding: '0.5rem 1rem',
                     borderRadius: '0.375rem',
                     border: '1px solid #d1d5db',
+                    cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
@@ -698,13 +702,11 @@ function DesktopHeader({
                     e.currentTarget.style.borderColor = '#d1d5db'
                     e.currentTarget.style.color = '#6b7280'
                   }}
-                  onClick={() => {
-                    onHelpClick?.();
-                  }}
+                  onClick={() => onHelpClick?.()}
                 >
                   <HelpCircle size={16} />
                   ヘルプ
-                </Link>
+                </button>
               )}
 
               {/* お問い合わせボタン（ログアウト時） */}
