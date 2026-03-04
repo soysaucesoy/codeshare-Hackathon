@@ -129,9 +129,7 @@ const VerifyEmail: React.FC = () => {
     setResendSuccess(false)
 
     try {
-      // 現在のセッションからユーザー情報を取得
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
       if (userError || !user?.email) {
         setResendError('ユーザー情報が取得できません。再度登録してください。')
         return

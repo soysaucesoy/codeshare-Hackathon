@@ -70,8 +70,12 @@ const AuthCallback: React.FC = () => {
               // データベースにユーザーレコードを作成
               await ensureUserRecord(authData.user)
               
+              // ユーザータイプに応じたリダイレクト先を決定
+              const userType = authData.user.user_metadata?.user_type
+              const redirectPath = userType === 'facility' ? '/business/mypage' : '/mypage'
+              
               // 3秒後にマイページにリダイレクト
-              setTimeout(() => router.push('/mypage'), 3000)
+              setTimeout(() => router.push(redirectPath), 3000)
               return
             }
           } catch (otpError) {
@@ -110,8 +114,12 @@ const AuthCallback: React.FC = () => {
               // データベースにユーザーレコードを作成
               await ensureUserRecord(authData.user)
               
+              // ユーザータイプに応じたリダイレクト先を決定
+              const userType = authData.user.user_metadata?.user_type
+              const redirectPath = userType === 'facility' ? '/business/mypage' : '/mypage'
+              
               // 3秒後にマイページにリダイレクト
-              setTimeout(() => router.push('/mypage'), 3000)
+              setTimeout(() => router.push(redirectPath), 3000)
               return
             }
             
@@ -162,9 +170,12 @@ const AuthCallback: React.FC = () => {
     try {
       console.log('=== ユーザーレコード確認・作成 ===')
       console.log('ユーザー情報:', user.id, user.email)
+
+      // user_typeをmetadataから正しく取得（事業者は 'facility'）
+      const correctUserType = user.user_metadata?.user_type || 'user'
       
       // 1. 既存レコードを確認
-      const { data: existingUser, error: checkError } = await supabase
+      const { data: existingUser } = await supabase
         .from('users')
         .select('id, email')
         .eq('id', user.id)
@@ -175,20 +186,19 @@ const AuthCallback: React.FC = () => {
       } else {
         console.log('新規ユーザーレコードを作成中...')
         
-        // ON CONFLICT で安全に作成
+        // ON CONFLICT で安全に作成（user_typeはmetadataから正しく取得）
         const { data: createdUser, error: userError } = await supabase
           .from('users')
           .upsert({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email,
-            user_type: 'user'
+            user_type: correctUserType,
           })
           .select()
 
         if (userError) {
           console.error('ユーザーレコード作成エラー:', userError)
-          
           // 重複エラーの場合は警告のみ（トリガーが既に作成した可能性）
           if (userError.code === '23505') {
             console.warn('重複キーエラー（トリガーで既に作成済み）:', userError.message)
@@ -198,35 +208,36 @@ const AuthCallback: React.FC = () => {
         }
       }
 
-      // 2. user_detailsレコードの処理
-      const { data: existingDetails, error: detailsCheckError } = await supabase
-        .from('user_details')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (existingDetails) {
-        console.log('既存user_detailsレコード確認済み')
-      } else {
-        console.log('新規user_detailsレコードを作成中...')
-        
-        const { data: createdDetails, error: detailsError } = await supabase
+      // 2. user_detailsレコードの処理（一般ユーザーのみ）
+      if (correctUserType !== 'facility') {
+        const { data: existingDetails } = await supabase
           .from('user_details')
-          .insert({
-            user_id: user.id,
-            receive_notifications: true
-          })
-          .select()
+          .select('user_id')
+          .eq('user_id', user.id)
+          .single()
 
-        if (detailsError) {
-          console.error('user_detailsレコード作成エラー:', detailsError)
-          
-          // 重複エラーの場合は警告のみ
-          if (detailsError.code === '23505') {
-            console.warn('重複キーエラー（トリガーで既に作成済み）:', detailsError.message)
-          }
+        if (existingDetails) {
+          console.log('既存user_detailsレコード確認済み')
         } else {
-          console.log('user_detailsレコード作成成功:', createdDetails)
+          console.log('新規user_detailsレコードを作成中...')
+          
+          const { data: createdDetails, error: detailsError } = await supabase
+            .from('user_details')
+            .insert({
+              user_id: user.id,
+              receive_notifications: true
+            })
+            .select()
+
+          if (detailsError) {
+            console.error('user_detailsレコード作成エラー:', detailsError)
+            // 重複エラーの場合は警告のみ
+            if (detailsError.code === '23505') {
+              console.warn('重複キーエラー（トリガーで既に作成済み）:', detailsError.message)
+            }
+          } else {
+            console.log('user_detailsレコード作成成功:', createdDetails)
+          }
         }
       }
 
