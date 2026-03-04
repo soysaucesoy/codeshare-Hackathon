@@ -107,8 +107,12 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
     if (authError) {
       setError(getAuthErrorMessage(authError)); // エラーメッセージ表示
       setLoading(false);
+    } else if (data?.session) {
+      // メール確認不要の場合（セッションが即時発行）: AuthProviderがリダイレクトを処理
+      setSuccess('登録が完了しました！ログイン中...');
+      setLoading(false);
     } else {
-      // verify-emailページへリダイレクト
+      // メール確認が必要な場合: verify-emailページへリダイレクト
       router.push('/auth/verify-email');
     }
   };

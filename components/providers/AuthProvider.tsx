@@ -24,6 +24,12 @@ export const useAuthContext = () => {
   return context;
 };
 
+// 認証が必要なルート（未ログイン時にトップへリダイレクト）
+const PROTECTED_ROUTES = ['/dashboard', '/mypage', '/business/mypage'];
+
+// ログイン済みユーザーをリダイレクトするログインページ（verify-email/callbackは除外）
+const AUTH_LOGIN_PAGES = ['/auth/userlogin', '/auth/facilitylogin', '/auth/auth', '/auth/facilityregister', '/auth/register'];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -145,16 +151,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // 認証が必要なルート（未ログイン時にトップへリダイレクト）
-  const protectedRoutes = ['/dashboard', '/mypage', '/business/mypage'];
-
   // 認証状態に応じたリダイレクトを管理する統合されたuseEffect
   useEffect(() => {
     if (loading || isRedirecting) return; // 読み込み中またはリダイレクト中はなにもしない
 
     const handleRedirect = async () => {
       if (user) { // ログイン後
-        if (router.pathname.startsWith('/auth')) {
+        if (AUTH_LOGIN_PAGES.some(p => router.pathname === p)) {
           setIsRedirecting(true);
           const userType = user.user_metadata?.user_type;
           const targetPath = userType === 'facility' ? '/business/mypage' : '/';
@@ -162,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsRedirecting(false);
         }
       } else { // 未ログイン時：認証が必要なページのみトップへリダイレクト
-        const isProtected = protectedRoutes.some(route =>
+        const isProtected = PROTECTED_ROUTES.some(route =>
           router.pathname === route || router.pathname.startsWith(route + '/')
         );
         if (isProtected) {

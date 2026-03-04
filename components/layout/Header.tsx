@@ -72,6 +72,7 @@ function MobileHeader({
   onHelpClick
 }: HeaderProps & { user?: any, userType?: string, myPagePath?: string }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { loading: authLoading } = useAuthContext()
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -206,7 +207,11 @@ function MobileHeader({
                 </Link>
               )}
               
-              {isLoggedIn ? (
+              {authLoading ? (
+                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                  読み込み中...
+                </div>
+              ) : isLoggedIn ? (
                 <>
                   {variant !== 'mypage' && (
                     <Link 
@@ -359,6 +364,7 @@ function DesktopHeader({
   myPagePath,
   onHelpClick
 }: HeaderProps & { user?: any, userType?: string, myPagePath?: string }) {
+  const { loading: authLoading } = useAuthContext()
   const handleLogout = async () => {
     const { error } = await signOut();
     if (error) {
@@ -456,7 +462,9 @@ function DesktopHeader({
           alignItems: 'center', 
           gap: '1rem' 
         }}>
-          {isLoggedIn ? (
+          {authLoading ? (
+            <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>読み込み中...</span>
+          ) : isLoggedIn ? (
             <>
               {/* ホームに戻るボタン（mypageの時のみ） */}
               {variant === 'mypage' && (
