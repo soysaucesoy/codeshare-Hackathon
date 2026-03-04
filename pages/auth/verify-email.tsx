@@ -242,7 +242,7 @@ const VerifyEmail: React.FC = () => {
               margin: '0 0 1.5rem 0',
               fontFamily: 'system-ui, -apple-system, sans-serif'
             }}>
-              アカウント作成が完了しました
+              アカウント作成までもう一歩です
             </p>
 
             {/* メイン説明 */}
@@ -256,13 +256,13 @@ const VerifyEmail: React.FC = () => {
               <p style={{
                 fontSize: '0.875rem',
                 color: '#374151',
-                margin: '0 0 1rem 0',
+                margin: '0 0 0 -0.1rem',
                 lineHeight: '1.6',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 ご登録いただいたメールアドレスに確認メールを送信しました。
                 <br />
-                <strong>メール内のリンクをクリック</strong>してアカウントを有効化してください。
+                <strong>メール内のリンクをクリック</strong>してアカウントを有効化してください。その後、手動でログインするか、このページが自動でリダイレクトされるのを待ってください。
               </p>
             </div>
 
@@ -314,14 +314,6 @@ const VerifyEmail: React.FC = () => {
 
             {/* 再送信セクション */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#6b7280',
-                margin: '0 0 1rem 0',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                メールが届かない場合は、迷惑メールフォルダもご確認ください。
-              </p>
               <Button 
                 variant="secondary"
                 size="md"
@@ -354,7 +346,7 @@ const VerifyEmail: React.FC = () => {
                 color: '#a16207',
                 margin: '0 0 0.5rem 0',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>📧 メールが届かない場合</h3>
+              }}>メールが届かない場合</h3>
               <ul style={{
                 fontSize: '0.75rem',
                 color: '#a16207',
@@ -372,15 +364,6 @@ const VerifyEmail: React.FC = () => {
             {/* アクションボタン */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <Button 
-                variant="primary" 
-                size="lg" 
-                href="/auth/userlogin"
-                style={{ width: '100%' }}
-              >
-                メール確認後、ログインする →
-              </Button>
-              
-              <Button 
                 variant="ghost" 
                 size="md" 
                 href="/"
@@ -392,52 +375,6 @@ const VerifyEmail: React.FC = () => {
             </div>
           </div>
         </Card>
-
-        {/* サポート情報 */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <p style={{
-            fontSize: '0.875rem',
-            color: '#6b7280',
-            margin: 0,
-            fontFamily: 'system-ui, -apple-system, sans-serif'
-          }}>
-            メール認証に関してご不明な点がございましたら{' '}
-            <a 
-              href="mailto:support@care-connect.jp" 
-              style={{
-                color: '#22c55e',
-                textDecoration: 'none',
-                fontWeight: 500
-              }}
-              onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#16a34a'}
-              onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#22c55e'}
-            >
-              サポートまでお問い合わせ
-            </a>
-            ください
-          </p>
-        </div>
-
-        {/* デバッグ情報（開発環境のみ） */}
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: '#f0f9ff',
-            borderRadius: '0.375rem',
-            border: '1px solid #bae6fd'
-          }}>
-            <p style={{
-              fontSize: '0.75rem',
-              color: '#0369a1',
-              margin: 0,
-              fontFamily: 'system-ui, -apple-system, sans-serif'
-            }}>
-              <strong>開発環境:</strong> Supabaseの設定でメール確認を無効にしている場合、
-              このステップはスキップされます。
-            </p>
-          </div>
-        )}
       </div>
 
       {/* スピンアニメーション */}
