@@ -32,14 +32,6 @@ const AuthCallback: React.FC = () => {
         const type = router.query.type || urlParams.get('type') || hashParams.get('type')
         const error_description = router.query.error_description || urlParams.get('error_description') || hashParams.get('error_description')
 
-        console.log('取得したパラメータ:', {
-          access_token: access_token ? `存在 (${String(access_token).substring(0, 20)}...)` : 'なし',
-          refresh_token: refresh_token ? `存在 (${String(refresh_token).substring(0, 20)}...)` : 'なし',
-          token_hash: token_hash ? `存在 (${String(token_hash).substring(0, 20)}...)` : 'なし',
-          type,
-          error_description
-        })
-
         // エラーがある場合の処理
         if (error_description) {
           console.error('URLエラーパラメータ:', error_description)
@@ -149,15 +141,6 @@ const AuthCallback: React.FC = () => {
 
         // 5. 認証情報がない場合
         console.log('認証情報が見つかりません')
-        
-        // デバッグ用の詳細情報
-        console.log('=== デバッグ詳細情報 ===')
-        console.log('window.location.href:', window.location.href)
-        console.log('window.location.search:', window.location.search)
-        console.log('window.location.hash:', window.location.hash)
-        console.log('router.asPath:', router.asPath)
-        console.log('router.query:', router.query)
-        
         setStatus('error')
         setMessage('認証情報が見つかりません。メール内のリンクが正しくない可能性があります。')
 
@@ -259,7 +242,7 @@ const AuthCallback: React.FC = () => {
     switch (status) {
       case 'processing':
         return {
-          icon: <Loader className="animate-spin" size={48} />,
+          icon: <Loader className="animate-spin"/>,
           title: '認証を処理しています...',
           description: 'しばらくお待ちください',
           bgColor: 'bg-blue-50',
@@ -268,7 +251,7 @@ const AuthCallback: React.FC = () => {
       
       case 'success':
         return {
-          icon: <CheckCircle size={48} />,
+          icon: <CheckCircle/>,
           title: 'ログイン成功！',
           description: `${userEmail}でログインしました。トップページに移動します...`,
           bgColor: 'bg-green-50',
@@ -277,7 +260,7 @@ const AuthCallback: React.FC = () => {
       
       case 'email_confirmed':
         return {
-          icon: <CheckCircle size={48} />,
+          icon: <CheckCircle/>,
           title: 'メール確認完了！',
           description: `${userEmail}のメールアドレスが確認されました。マイページに移動します...`,
           bgColor: 'bg-green-50',
@@ -286,7 +269,7 @@ const AuthCallback: React.FC = () => {
       
       case 'already_confirmed':
         return {
-          icon: <CheckCircle size={48} />,
+          icon: <CheckCircle/>,
           title: '認証済み',
           description: `${userEmail}で既にログイン済みです。トップページに移動します...`,
           bgColor: 'bg-blue-50',
@@ -295,7 +278,7 @@ const AuthCallback: React.FC = () => {
       
       case 'error':
         return {
-          icon: <AlertCircle size={48} />,
+          icon: <AlertCircle/>,
           title: '認証エラー',
           description: message,
           bgColor: 'bg-red-50',
@@ -359,20 +342,6 @@ const AuthCallback: React.FC = () => {
         {(status === 'success' || status === 'email_confirmed' || status === 'already_confirmed') && (
           <div className="text-sm text-gray-500">
             自動的にリダイレクトされます...
-          </div>
-        )}
-
-        {/* デバッグ情報（開発環境のみ） */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6 p-3 bg-gray-100 rounded text-xs text-left">
-            <strong>デバッグ情報:</strong>
-            <pre className="mt-1 whitespace-pre-wrap">
-              {JSON.stringify({
-                status,
-                query: router.query,
-                userEmail
-              }, null, 2)}
-            </pre>
           </div>
         )}
       </div>
