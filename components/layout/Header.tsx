@@ -209,7 +209,7 @@ function MobileHeader({
               
               {authLoading ? (
                 <div style={{ padding: '0.75rem', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
-                  読み込み中...
+                  ❕再読み込みしてください
                 </div>
               ) : isLoggedIn ? (
                 <>
@@ -463,7 +463,7 @@ function DesktopHeader({
           gap: '1rem' 
         }}>
           {authLoading ? (
-            <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>読み込み中...</span>
+            <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>❕再読み込みしてください</span>
           ) : isLoggedIn ? (
             <>
               {/* ホームに戻るボタン（mypageの時のみ） */}
