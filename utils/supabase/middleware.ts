@@ -22,26 +22,16 @@ export async function updateSession(request: NextRequest) {
           request.cookies.set({ name, value, ...options })
           response.cookies.set({ name, value, ...options })
         },
-        // ▼▼▼ この部分を修正 ▼▼▼
         remove: (name, options) => {
-          // .set({...}) の代わりに .delete() を使用する
           request.cookies.delete(name)
           response.cookies.delete(name)
         },
-        // ▲▲▲ 修正完了 ▲▲▲
       },
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // セッションのリフレッシュのみ行い、リダイレクトはクライアント側(AuthProvider)に任せる
+  await supabase.auth.getUser()
 
-  const authRoutes = ['/auth/userlogin', '/auth/facilitylogin']
-  if (user && authRoutes.includes(request.nextUrl.pathname)) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/'
-    return NextResponse.redirect(redirectUrl)
-  }
   return response
 }
