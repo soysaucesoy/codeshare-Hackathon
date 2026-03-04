@@ -337,7 +337,7 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
             </span>
           </Link>
           
-          {/* 施設ログインボタン */}
+          {/* 事業者ログインボタン */}
           <Link 
             href="/auth/facilitylogin" 
             style={{ 
@@ -366,7 +366,7 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
             }}
           >
             <Home size={16} />
-            施設ログイン
+            事業者ログイン
           </Link>
         </div>
 

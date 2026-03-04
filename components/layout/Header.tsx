@@ -653,23 +653,25 @@ function DesktopHeader({
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '0.5rem',
-                  color: '#22c55e',
+                  color: '#6b7280',
                   textDecoration: 'none',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   padding: '0.5rem 1rem',
                   borderRadius: '0.375rem',
-                  border: '1px solid #22c55e',
+                  border: '1px solid #e5e7eb',
                   transition: 'all 0.2s',
                   background: 'white'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#22c55e'
-                  e.currentTarget.style.color = 'white'
+                  e.currentTarget.style.backgroundColor = '#f9fafb'
+                  e.currentTarget.style.borderColor = '#22c55e'
+                  e.currentTarget.style.color = '#22c55e'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'white'
-                  e.currentTarget.style.color = '#22c55e'
+                  e.currentTarget.style.borderColor = '#e5e7eb'
+                  e.currentTarget.style.color = '#6b7280'
                 }}
               >
                 <Building2 size={16} />

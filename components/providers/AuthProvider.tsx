@@ -1,4 +1,4 @@
-// components/providers/AuthProvider.tsx - 完成版
+// components/providers/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
@@ -197,18 +197,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) return { data, error };
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     if (data.user) {
-      const { error: facilityError } = await supabase.from('facilities').insert({
-        user_id: data.user.id,
-        name: `${fullName}の事業所`,
-        is_active: false,
-      });
+      // DBトリガーがusersテーブルへのレコード作成を完了するまで少し待機
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (facilityError) {
-        console.error('Facility creation failed:', facilityError);
-        return { data, error: new Error('認証は成功しましたが、事業者プロファイルの作成に失敗しました。') };
+      // サービスロールキーを使うサーバーサイドAPIでRLSをバイパスしてプロファイルを作成
+      try {
+        const response = await fetch('/api/auth/create-facility-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: data.user.id,
+            fullName,
+            email,
+          }),
+        });
+
+        const responseData = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          console.error('Facility profile creation failed (status:', response.status, '):', responseData);
+          return { data, error: new Error(`事業者プロファイルの作成に失敗しました: ${responseData.error || response.status}`) };
+        }
+        console.log('Facility profile created successfully:', responseData);
+      } catch (fetchError) {
+        console.error('Facility profile API call failed:', fetchError);
+        return { data, error: new Error(`APIリクエストに失敗しました: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`) };
       }
     }
     return { data, error };

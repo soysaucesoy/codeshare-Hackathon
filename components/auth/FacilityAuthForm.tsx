@@ -1,6 +1,7 @@
 // components/auth/FacilityAuthForm.tsx
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { ArrowLeft, Mail, Lock, Home, Eye, EyeOff, User, Building2, Users } from 'lucide-react'
 //import { useAuth } from '@/lib/hooks/useAuth'
 import Button from '../ui/Button'
@@ -14,6 +15,7 @@ interface FacilityAuthFormProps {
 
 const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login' }) => {
   const { signInWithEmail, signUpAsFacility, loading: authLoading } = useAuthContext();
+  const router = useRouter()
   
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab)
   const [loginData, setLoginData] = useState({
@@ -104,14 +106,12 @@ const FacilityAuthForm: React.FC<FacilityAuthFormProps> = ({ defaultTab = 'login
 
     if (authError) {
       setError(getAuthErrorMessage(authError)); // エラーメッセージ表示
+      setLoading(false);
     } else {
-      // 成功メッセージを表示。リダイレクトはAuthProviderが自動で行う。
-      setSuccess('事業者アカウントの作成リクエストを受け付けました。メールを確認してください。');
+      // verify-emailページへリダイレクト
+      router.push('/auth/verify-email');
     }
-
-    setLoading(false);
   };
-  // ▲▲▲【修正完了】▲▲▲
 
   // エラーメッセージのヘルパー関数
   const getAuthErrorMessage = (error: any): string => {
