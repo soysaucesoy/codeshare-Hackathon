@@ -207,6 +207,8 @@ export interface Message {
   user_id?: number
   content: string
   is_read: boolean
+  message_type?: 'text' | 'survey'
+  survey_response_id?: string
   created_at: string
   updated_at?: string
 }

@@ -1,8 +1,10 @@
 // components/dm/MessageThread.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, ArrowLeft, User } from 'lucide-react';
+import { Send, ArrowLeft, User, ClipboardList } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import { useMessages, type Message, type Conversation } from '@/lib/hooks/useMessages';
+import SurveyCard from '@/components/dm/SurveyCard';
+import SendSurveyModal from '@/components/surveys/SendSurveyModal';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -14,7 +16,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
   const { messages, fetchMessages, sendMessage, loading } = useMessages();
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 事業者かどうか判定（user_metadataのuser_typeで確認）
+  const isFacility = user?.user_metadata?.user_type === 'facility';
 
   // メッセージを取得
   useEffect(() => {
@@ -38,7 +44,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
 
     try {
       setSending(true);
-      
       await sendMessage(conversation.id, newMessage.trim());
       setNewMessage('');
     } catch (error) {
@@ -51,15 +56,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
 
   const getOtherPartyName = () => {
     if (!user) return '';
-
-    // ログインユーザーのIDで判定
     const isUserSide = conversation.user_id === user.id;
-
     if (isUserSide) {
-      // 利用者側：事業所名を表示
       return conversation.facility?.name || '事業所';
     } else {
-      // 事業者側：利用者名を表示
       return conversation.user?.full_name || '利用者';
     }
   };
@@ -97,8 +97,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
         >
           <ArrowLeft size={20} />
         </button>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
           <div style={{
             width: '40px',
             height: '40px',
@@ -112,19 +112,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
             <User size={20} />
           </div>
           <div>
-            <h3 style={{
-              margin: 0,
-              fontSize: '1rem',
-              fontWeight: 600,
-              color: '#111827'
-            }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
               {getOtherPartyName()}
             </h3>
-            <p style={{
-              margin: 0,
-              fontSize: '0.875rem',
-              color: '#6b7280'
-            }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
               {conversation.user_id === user?.id
                 ? (conversation.facility?.name && `事業所: ${conversation.facility.name}`)
                 : (conversation.user?.full_name && `利用者: ${conversation.user.full_name}`)
@@ -132,6 +123,24 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
             </p>
           </div>
         </div>
+
+        {/* 事業者のみ「アンケートを送信」ボタンを表示 */}
+        {isFacility && (
+          <button
+            onClick={() => setShowSurveyModal(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+              padding: '0.5rem 0.875rem',
+              background: '#f0fdf4', border: '1px solid #86efac',
+              borderRadius: '0.5rem', cursor: 'pointer',
+              fontSize: '0.8125rem', fontWeight: 500, color: '#16a34a',
+              flexShrink: 0
+            }}
+          >
+            <ClipboardList size={15} />
+            アンケートを送信
+          </button>
+        )}
       </div>
 
       {/* メッセージ一覧 */}
@@ -146,11 +155,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
             メッセージを読み込み中...
           </div>
         ) : messages.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            color: '#6b7280',
-            padding: '2rem' 
-          }}>
+          <div style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
             まだメッセージがありません。
             <br />
             最初のメッセージを送信してみましょう！
@@ -159,7 +164,37 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {messages.map((message) => {
               const isMyMessage = message.sender_id === user?.id;
+              const isSurveyMessage = message.message_type === 'survey';
 
+              // アンケートメッセージの場合
+              if (isSurveyMessage && message.survey_response_id) {
+                return (
+                  <div
+                    key={message.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: isMyMessage ? 'flex-end' : 'flex-start'
+                    }}
+                  >
+                    <div style={{ maxWidth: '90%' }}>
+                      <SurveyCard surveyResponseId={message.survey_response_id} />
+                      <p style={{
+                        margin: '0.25rem 0 0',
+                        fontSize: '0.75rem',
+                        color: '#9ca3af',
+                        textAlign: isMyMessage ? 'right' : 'left'
+                      }}>
+                        {new Date(message.created_at).toLocaleString('ja-JP', {
+                          month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              // 通常のテキストメッセージ
               return (
                 <div
                   key={message.id}
@@ -177,11 +212,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
                     background: isMyMessage ? '#22c55e' : '#f3f4f6',
                     color: isMyMessage ? 'white' : '#111827'
                   }}>
-                    <p style={{
-                      margin: 0,
-                      fontSize: '0.875rem',
-                      lineHeight: '1.5'
-                    }}>
+                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: '1.5' }}>
                       {message.content}
                     </p>
                     <div style={{
@@ -191,25 +222,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
                       gap: '0.5rem',
                       marginTop: '0.25rem'
                     }}>
-                      <p style={{
-                        margin: 0,
-                        fontSize: '0.75rem',
-                        opacity: 0.7
-                      }}>
+                      <p style={{ margin: 0, fontSize: '0.75rem', opacity: 0.7 }}>
                         {new Date(message.created_at).toLocaleString('ja-JP', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
                         })}
                       </p>
-                      {/* 自分が送信したメッセージのみ既読・未読を表示 */}
                       {isMyMessage && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          opacity: 0.8,
-                          fontWeight: 500
-                        }}>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>
                           {message.is_read ? '既読' : '未読'}
                         </span>
                       )}
@@ -267,6 +287,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
           {sending ? '送信中...' : '送信'}
         </button>
       </form>
+
+      {/* アンケート送信モーダル */}
+      {showSurveyModal && (
+        <SendSurveyModal
+          facilityId={conversation.facility_id}
+          conversationId={conversation.id}
+          onClose={() => setShowSurveyModal(false)}
+          onSent={() => fetchMessages(conversation.id)}
+        />
+      )}
     </div>
   );
 };

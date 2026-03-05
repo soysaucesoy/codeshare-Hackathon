@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Head from 'next/head'
-import { 
+import {
   Building2, User, Mail, Phone, MapPin, Globe, FileText,
   Eye, EyeOff, Save, Edit3, Settings, Lock, Award,
-  AlertCircle, CheckCircle, Image, Star, ArrowLeft, MessageCircle
+  AlertCircle, CheckCircle, Image, Star, ArrowLeft, MessageCircle, ClipboardList
 } from 'lucide-react'
 import { useAuthContext } from '@/components/providers/AuthProvider'
 import { useMessages } from '@/lib/hooks/useMessages'
@@ -15,6 +15,7 @@ import { T_DISTRICTS, SERVICE_CATEGORIES } from '@/types/database'
 import Header from '../../components/layout/Header'
 import ConversationList from '@/components/dm/ConversationList'
 import MessageThread from '@/components/dm/MessageThread'
+import SurveyBuilder from '@/components/surveys/SurveyBuilder'
 
 const TOKYO_DISTRICTS = T_DISTRICTS
 
@@ -703,7 +704,7 @@ const FacilityMyPage: React.FC = () => {
   const { user, signOut } = useAuthContext()
   const { conversations, fetchConversations, loading: messagesLoading } = useMessages()
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'facility' | 'services' | 'account' | 'messages'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'facility' | 'services' | 'account' | 'messages' | 'surveys'>('profile')
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -972,7 +973,8 @@ const FacilityMyPage: React.FC = () => {
     { key: 'facility', label: '事業所情報', icon: Building2 },
     { key: 'services', label: 'サービス管理', icon: Award },
     { key: 'account', label: 'アカウント設定', icon: Settings },
-    { key: 'messages', label: 'メッセージ', icon: MessageCircle }
+    { key: 'messages', label: 'メッセージ', icon: MessageCircle },
+    { key: 'surveys', label: 'アンケート管理', icon: ClipboardList }
   ]
 
   // ログインチェック
@@ -1713,6 +1715,24 @@ const FacilityMyPage: React.FC = () => {
                   selectedConversationId={selectedConversation?.id}
                   loading={messagesLoading}
                 />
+              )}
+            </div>
+          )}
+
+          {/* アンケート管理タブ */}
+          {activeTab === 'surveys' && (
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              border: '1px solid #e5e7eb',
+              padding: '1.5rem'
+            }}>
+              {profileData.facility_id ? (
+                <SurveyBuilder facilityId={Number(profileData.facility_id)} />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
+                  <p>事業所情報を先に登録してください</p>
+                </div>
               )}
             </div>
           )}
