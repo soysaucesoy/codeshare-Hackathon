@@ -60,6 +60,11 @@ const SearchFilterComponent: React.FC<{
 
   const clearServices = () => setSelectedServices([]);
 
+  const selectConsultationServices = () => {
+    const consultationServices = SERVICE_CATEGORIES['相談系サービス'] || [];
+    setSelectedServices(consultationServices.map(s => s.id));
+  };
+
   const toggleCategory = (category: string) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
@@ -158,7 +163,16 @@ const SearchFilterComponent: React.FC<{
               alignItems: 'center',
               marginBottom: '1rem',
             }}>
-              <span className="filter-label">サービスを選択してください</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span className="filter-label">サービスを選択してください</span>
+                <button
+                  type="button"
+                  onClick={selectConsultationServices}
+                  style={{ background: 'none', border: 'none', color: '#16a34a', fontSize: '0.75rem', cursor: 'pointer', textAlign: 'left', padding: 0, textDecoration: 'underline' }}
+                >
+                  まずはあなたのパートナーとなる相談支援専門員を探してみませんか？
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={clearServices}
