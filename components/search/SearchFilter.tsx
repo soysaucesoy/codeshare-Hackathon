@@ -345,6 +345,9 @@ const SearchFilterComponent: React.FC<{
           </button>
         </div>
       </div>
+      <div style={{ position: "absolute", bottom: "-25px", fontSize: "10px" }}>
+        ※本サイトに掲載されている空き情報は、実際の空き状況とは異なります。
+      </div>
     </form>
   );
 };
