@@ -92,6 +92,77 @@ export function useSurveys() {
     }
   }, [user])
 
+  // アンケートを更新
+  const updateSurvey = useCallback(async (surveyId: string, form: SurveyForm) => {
+    if (!user) throw new Error('ログインが必要です')
+
+    try {
+      setLoading(true)
+
+      // アンケート本体を更新
+      const { error: surveyError } = await supabase
+        .from('surveys')
+        .update({
+          title: form.title,
+          description: form.description || null
+        })
+        .eq('id', surveyId)
+
+      if (surveyError) throw surveyError
+
+      // 既存の質問IDを取得
+      const { data: existingQuestions, error: fetchQError } = await supabase
+        .from('survey_questions')
+        .select('id')
+        .eq('survey_id', surveyId)
+
+      if (fetchQError) throw fetchQError
+
+      // 既存の回答を削除（FK制約のため先に削除）
+      if (existingQuestions && existingQuestions.length > 0) {
+        const questionIds = existingQuestions.map(q => q.id)
+        const { error: deleteAnswersError } = await supabase
+          .from('survey_answers')
+          .delete()
+          .in('question_id', questionIds)
+
+        if (deleteAnswersError) throw deleteAnswersError
+      }
+
+      // 既存の質問を削除
+      const { error: deleteError } = await supabase
+        .from('survey_questions')
+        .delete()
+        .eq('survey_id', surveyId)
+
+      if (deleteError) throw deleteError
+
+      // 新しい質問を挿入
+      if (form.questions.length > 0) {
+        const questionsToInsert = form.questions.map((q, index) => ({
+          survey_id: surveyId,
+          question_text: q.question_text,
+          question_type: q.question_type,
+          options: q.options.length > 0 ? q.options : null,
+          required: q.required,
+          order_index: index
+        }))
+
+        const { error: questionsError } = await supabase
+          .from('survey_questions')
+          .insert(questionsToInsert)
+
+        if (questionsError) throw questionsError
+      }
+    } catch (err: any) {
+      setError(err.message)
+      console.error('アンケート更新エラー:', err)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
   // アンケートを削除（論理削除: is_active=false）
   const deleteSurvey = useCallback(async (surveyId: string) => {
     try {
@@ -249,6 +320,7 @@ export function useSurveys() {
     error,
     fetchSurveys,
     createSurvey,
+    updateSurvey,
     deleteSurvey,
     sendSurveyToConversation,
     fetchSurveyResponse,
