@@ -20,7 +20,8 @@ export function useSurveys() {
         .from('surveys')
         .select(`
           *,
-          questions:survey_questions(*)
+          questions:survey_questions(*),
+          responses:survey_responses(id)
         `)
         .eq('facility_id', facilityId)
         .eq('is_active', true)
@@ -99,7 +100,17 @@ export function useSurveys() {
     try {
       setLoading(true)
 
-      // アンケート本体を更新
+      // 送信済み（survey_responsesが存在する）か確認
+      const { count, error: countError } = await supabase
+        .from('survey_responses')
+        .select('id', { count: 'exact', head: true })
+        .eq('survey_id', surveyId)
+
+      if (countError) throw countError
+
+      const hasResponses = (count ?? 0) > 0
+
+      // タイトル・説明は常に更新可能
       const { error: surveyError } = await supabase
         .from('surveys')
         .update({
@@ -110,26 +121,10 @@ export function useSurveys() {
 
       if (surveyError) throw surveyError
 
-      // 既存の質問IDを取得
-      const { data: existingQuestions, error: fetchQError } = await supabase
-        .from('survey_questions')
-        .select('id')
-        .eq('survey_id', surveyId)
+      // 送信済みの場合は設問変更を禁止（過去の回答データを保護）
+      if (hasResponses) return
 
-      if (fetchQError) throw fetchQError
-
-      // 既存の回答を削除（FK制約のため先に削除）
-      if (existingQuestions && existingQuestions.length > 0) {
-        const questionIds = existingQuestions.map(q => q.id)
-        const { error: deleteAnswersError } = await supabase
-          .from('survey_answers')
-          .delete()
-          .in('question_id', questionIds)
-
-        if (deleteAnswersError) throw deleteAnswersError
-      }
-
-      // 既存の質問を削除
+      // 未送信の場合のみ設問を差し替え（回答が存在しないため survey_answers の削除は不要）
       const { error: deleteError } = await supabase
         .from('survey_questions')
         .delete()
@@ -137,7 +132,6 @@ export function useSurveys() {
 
       if (deleteError) throw deleteError
 
-      // 新しい質問を挿入
       if (form.questions.length > 0) {
         const questionsToInsert = form.questions.map((q, index) => ({
           survey_id: surveyId,

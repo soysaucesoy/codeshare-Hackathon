@@ -12,6 +12,7 @@ export interface Survey {
   created_at: string
   updated_at: string
   questions?: SurveyQuestion[]
+  responses?: Array<{ id: string }>  // 送信済み判定用（fetchSurveysで取得）
 }
 
 export interface SurveyQuestion {

@@ -135,6 +135,8 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
     }
   }
 
+  const isSurveyLocked = (survey: Survey) => (survey.responses?.length ?? 0) > 0
+
   const handleEditQuestionChange = (index: number, field: keyof SurveyQuestionForm, value: any) => {
     setEditForm(prev => ({
       ...prev,
@@ -446,31 +448,47 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
                     <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.75rem' }}>
                       質問項目
                     </label>
+
+                    {/* 送信済みの場合は設問編集不可の警告 */}
+                    {editingSurvey && isSurveyLocked(editingSurvey) && (
+                      <div style={{
+                        background: '#fefce8', border: '1px solid #fde047',
+                        borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem',
+                        fontSize: '0.875rem', color: '#854d0e'
+                      }}>
+                        このアンケートはすでに送信されています。過去の回答データを保護するため、設問の編集はできません。タイトルと説明のみ変更できます。
+                      </div>
+                    )}
+
                     {editForm.questions.map((q, qIndex) => (
                       <div key={qIndex} style={{
-                        background: '#f9fafb', border: '1px solid #e5e7eb',
-                        borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.75rem'
+                        background: editingSurvey && isSurveyLocked(editingSurvey) ? '#f9fafb' : '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.75rem',
+                        opacity: editingSurvey && isSurveyLocked(editingSurvey) ? 0.65 : 1
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                           <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6b7280' }}>Q{qIndex + 1}</span>
-                          <div style={{ display: 'flex', gap: '0.25rem' }}>
-                            <button type="button" onClick={() => handleEditMoveQuestion(qIndex, 'up')}
-                              disabled={qIndex === 0}
-                              style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: qIndex === 0 ? 'not-allowed' : 'pointer', opacity: qIndex === 0 ? 0.3 : 1 }}>
-                              <ChevronUp size={16} />
-                            </button>
-                            <button type="button" onClick={() => handleEditMoveQuestion(qIndex, 'down')}
-                              disabled={qIndex === editForm.questions.length - 1}
-                              style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: qIndex === editForm.questions.length - 1 ? 'not-allowed' : 'pointer', opacity: qIndex === editForm.questions.length - 1 ? 0.3 : 1 }}>
-                              <ChevronDown size={16} />
-                            </button>
-                            <button type="button"
-                              onClick={() => setEditForm(prev => ({ ...prev, questions: prev.questions.filter((_, i) => i !== qIndex) }))}
-                              disabled={editForm.questions.length === 1}
-                              style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: editForm.questions.length === 1 ? 'not-allowed' : 'pointer', color: '#ef4444', opacity: editForm.questions.length === 1 ? 0.3 : 1 }}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                          {!(editingSurvey && isSurveyLocked(editingSurvey)) && (
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                              <button type="button" onClick={() => handleEditMoveQuestion(qIndex, 'up')}
+                                disabled={qIndex === 0}
+                                style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: qIndex === 0 ? 'not-allowed' : 'pointer', opacity: qIndex === 0 ? 0.3 : 1 }}>
+                                <ChevronUp size={16} />
+                              </button>
+                              <button type="button" onClick={() => handleEditMoveQuestion(qIndex, 'down')}
+                                disabled={qIndex === editForm.questions.length - 1}
+                                style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: qIndex === editForm.questions.length - 1 ? 'not-allowed' : 'pointer', opacity: qIndex === editForm.questions.length - 1 ? 0.3 : 1 }}>
+                                <ChevronDown size={16} />
+                              </button>
+                              <button type="button"
+                                onClick={() => setEditForm(prev => ({ ...prev, questions: prev.questions.filter((_, i) => i !== qIndex) }))}
+                                disabled={editForm.questions.length === 1}
+                                style={{ padding: '0.25rem', border: 'none', background: 'none', cursor: editForm.questions.length === 1 ? 'not-allowed' : 'pointer', color: '#ef4444', opacity: editForm.questions.length === 1 ? 0.3 : 1 }}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <input
@@ -479,29 +497,33 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
                           onChange={e => handleEditQuestionChange(qIndex, 'question_text', e.target.value)}
                           placeholder="質問を入力してください"
                           required
+                          disabled={!!(editingSurvey && isSurveyLocked(editingSurvey))}
                           style={{
                             width: '100%', padding: '0.5rem 0.75rem',
                             border: '1px solid #d1d5db', borderRadius: '0.375rem',
-                            fontSize: '0.875rem', marginBottom: '0.5rem', outline: 'none', boxSizing: 'border-box'
+                            fontSize: '0.875rem', marginBottom: '0.5rem', outline: 'none', boxSizing: 'border-box',
+                            background: editingSurvey && isSurveyLocked(editingSurvey) ? '#f3f4f6' : 'white'
                           }}
                         />
 
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                           {(['text', 'radio', 'checkbox'] as QuestionType[]).map(type => (
-                            <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.8125rem' }}>
+                            <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: editingSurvey && isSurveyLocked(editingSurvey) ? 'not-allowed' : 'pointer', fontSize: '0.8125rem' }}>
                               <input
                                 type="radio"
                                 checked={q.question_type === type}
                                 onChange={() => handleEditQuestionChange(qIndex, 'question_type', type)}
+                                disabled={!!(editingSurvey && isSurveyLocked(editingSurvey))}
                               />
                               {type === 'text' ? 'テキスト入力' : type === 'radio' ? '単一選択' : '複数選択'}
                             </label>
                           ))}
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.8125rem', marginLeft: 'auto' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: editingSurvey && isSurveyLocked(editingSurvey) ? 'not-allowed' : 'pointer', fontSize: '0.8125rem', marginLeft: 'auto' }}>
                             <input
                               type="checkbox"
                               checked={q.required}
                               onChange={e => handleEditQuestionChange(qIndex, 'required', e.target.checked)}
+                              disabled={!!(editingSurvey && isSurveyLocked(editingSurvey))}
                             />
                             必須
                           </label>
@@ -517,40 +539,48 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
                                   value={opt}
                                   onChange={e => handleEditOptionChange(qIndex, oIndex, e.target.value)}
                                   placeholder={`選択肢 ${oIndex + 1}`}
+                                  disabled={!!(editingSurvey && isSurveyLocked(editingSurvey))}
                                   style={{
                                     flex: 1, padding: '0.375rem 0.625rem',
                                     border: '1px solid #d1d5db', borderRadius: '0.375rem',
-                                    fontSize: '0.8125rem', outline: 'none'
+                                    fontSize: '0.8125rem', outline: 'none',
+                                    background: editingSurvey && isSurveyLocked(editingSurvey) ? '#f3f4f6' : 'white'
                                   }}
                                 />
-                                <button type="button" onClick={() => handleEditRemoveOption(qIndex, oIndex)}
-                                  style={{ padding: '0.375rem', border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444' }}>
-                                  <X size={14} />
-                                </button>
+                                {!(editingSurvey && isSurveyLocked(editingSurvey)) && (
+                                  <button type="button" onClick={() => handleEditRemoveOption(qIndex, oIndex)}
+                                    style={{ padding: '0.375rem', border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444' }}>
+                                    <X size={14} />
+                                  </button>
+                                )}
                               </div>
                             ))}
-                            <button type="button" onClick={() => handleEditAddOption(qIndex)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
-                                padding: '0.25rem 0.5rem', background: 'white', border: '1px dashed #d1d5db',
-                                borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#6b7280'
-                              }}>
-                              <Plus size={12} /> 選択肢を追加
-                            </button>
+                            {!(editingSurvey && isSurveyLocked(editingSurvey)) && (
+                              <button type="button" onClick={() => handleEditAddOption(qIndex)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                                  padding: '0.25rem 0.5rem', background: 'white', border: '1px dashed #d1d5db',
+                                  borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#6b7280'
+                                }}>
+                                <Plus size={12} /> 選択肢を追加
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
 
-                    <button type="button"
-                      onClick={() => setEditForm(prev => ({ ...prev, questions: [...prev.questions, { ...emptyQuestion(), order_index: prev.questions.length }] }))}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.5rem 1rem', background: 'white', border: '1px dashed #22c55e',
-                        borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: '#22c55e', fontWeight: 500
-                      }}>
-                      <Plus size={16} /> 質問を追加
-                    </button>
+                    {!(editingSurvey && isSurveyLocked(editingSurvey)) && (
+                      <button type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, questions: [...prev.questions, { ...emptyQuestion(), order_index: prev.questions.length }] }))}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                          padding: '0.5rem 1rem', background: 'white', border: '1px dashed #22c55e',
+                          borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: '#22c55e', fontWeight: 500
+                        }}>
+                        <Plus size={16} /> 質問を追加
+                      </button>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
