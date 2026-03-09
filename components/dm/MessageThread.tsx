@@ -13,7 +13,7 @@ interface MessageThreadProps {
 
 const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) => {
   const { user } = useAuthContext();
-  const { messages, fetchMessages, sendMessage, loading } = useMessages();
+  const { messages, fetchMessages, sendMessage, loading, setActiveConversationId } = useMessages();
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
@@ -21,6 +21,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
 
   // 事業者かどうか判定（user_metadataのuser_typeで確認）
   const isFacility = user?.user_metadata?.user_type === 'facility';
+
+  // アクティブな会話を設定（Realtimeでこの会話のメッセージを即時反映）
+  useEffect(() => {
+    setActiveConversationId(conversation.id);
+    return () => setActiveConversationId(null);
+  }, [conversation.id, setActiveConversationId]);
 
   // メッセージを取得
   useEffect(() => {
