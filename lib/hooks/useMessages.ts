@@ -335,6 +335,18 @@ export function useMessages() {
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages'
+        },
+        () => {
+          // 既読更新時に未読数を再計算
+          fetchConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'INSERT',
           schema: 'public',
           table: 'conversations',
@@ -371,6 +383,7 @@ export function useMessages() {
     getOrCreateConversation,
     sendMessage,
     getUnreadCount,
-    setMessages
+    setMessages,
+    totalUnreadCount: conversations.reduce((sum, c: any) => sum + (c.unread_count || 0), 0)
   };
 }
