@@ -702,7 +702,7 @@ const ServiceManagement: React.FC<{
 const FacilityMyPage: React.FC = () => {
   const router = useRouter()
   const { user, signOut } = useAuthContext()
-  const { conversations, fetchConversations, loading: messagesLoading } = useMessages()
+  const { conversations, fetchConversations, loading: messagesLoading, totalUnreadCount } = useMessages()
   
   const [activeTab, setActiveTab] = useState<'profile' | 'facility' | 'services' | 'account' | 'messages' | 'surveys'>('profile')
   const [isEditing, setIsEditing] = useState(false)
@@ -1079,6 +1079,8 @@ const FacilityMyPage: React.FC = () => {
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
             {tabs.map(tab => {
               const IconComponent = tab.icon
+              const isActive = activeTab === tab.key
+              const showBadge = tab.key === 'messages' && totalUnreadCount > 0
               return (
                 <button
                   key={tab.key}
@@ -1091,8 +1093,8 @@ const FacilityMyPage: React.FC = () => {
                     flex: '1',
                     minWidth: '140px',
                     padding: '1rem 1.5rem',
-                    background: activeTab === tab.key ? '#22c55e' : 'transparent',
-                    color: activeTab === tab.key ? 'white' : '#6b7280',
+                    background: isActive ? '#22c55e' : 'transparent',
+                    color: isActive ? 'white' : '#6b7280',
                     border: 'none',
                     fontSize: '0.775rem',
                     fontWeight: 500,
@@ -1101,11 +1103,32 @@ const FacilityMyPage: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.5rem',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    position: 'relative'
                   }}
                 >
                   <IconComponent size={16} />
                   {tab.label}
+                  {showBadge && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '18px',
+                      height: '18px',
+                      padding: '0 4px',
+                      borderRadius: '9999px',
+                      background: '#22c55e',
+                      color: 'white',
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      border: isActive ? '1.5px solid white' : '1.5px solid #e5e7eb',
+                      flexShrink: 0
+                    }}>
+                      {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                    </span>
+                  )}
                 </button>
               )
             })}

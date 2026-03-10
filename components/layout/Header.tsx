@@ -6,6 +6,7 @@ import { useAuthContext } from '@/components/providers/AuthProvider'
 import { getMyPagePath, getUserType } from '@/lib/utils/userType'
 import { useDevice } from '../../hooks/useDevice'
 import HelpModal from './HelpModal'
+import { useUnreadCount } from '@/lib/hooks/useUnreadCount'
 
 interface HeaderProps {
   isLoggedIn: boolean
@@ -32,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({
   
   const userType = getUserType(user)
   const myPagePath = getMyPagePath(user)
+  const unreadCount = useUnreadCount()
 
   const onHelpClick = () => setIsHelpModalOpen(true)
 
@@ -47,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({
     userType,
     myPagePath,
     onHelpClick,
+    unreadCount,
   }
 
   return (
@@ -69,8 +72,9 @@ function MobileHeader({
   user,
   userType,
   myPagePath,
-  onHelpClick
-}: HeaderProps & { user?: any, userType?: string, myPagePath?: string }) {
+  onHelpClick,
+  unreadCount = 0
+}: HeaderProps & { user?: any, userType?: string, myPagePath?: string, unreadCount?: number }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { loading: authLoading } = useAuthContext()
 
@@ -226,12 +230,25 @@ function MobileHeader({
                         color: 'white', 
                         textDecoration: 'none', 
                         borderRadius: '0.375rem',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        position: 'relative'
                       }}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User size={16} />
                       マイページ
+                      {unreadCount > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '6px',
+                          right: '6px',
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          background: '#16a34a',
+                          border: '2px solid white'
+                        }} />
+                      )}
                     </Link>
                   )}
                   <button
@@ -362,8 +379,9 @@ function DesktopHeader({
   user,
   userType,
   myPagePath,
-  onHelpClick
-}: HeaderProps & { user?: any, userType?: string, myPagePath?: string }) {
+  onHelpClick,
+  unreadCount = 0
+}: HeaderProps & { user?: any, userType?: string, myPagePath?: string, unreadCount?: number }) {
   const { loading: authLoading } = useAuthContext()
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -512,7 +530,8 @@ function DesktopHeader({
                     padding: '0.5rem 1rem',
                     borderRadius: '0.375rem',
                     border: '1px solid #22c55e',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    position: 'relative'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#22c55e'
@@ -525,6 +544,19 @@ function DesktopHeader({
                 >
                   <User size={16} />
                   マイページ
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: '#22c55e',
+                      border: '2px solid white',
+                      boxShadow: '0 0 0 1px #22c55e'
+                    }} />
+                  )}
                 </Link>
               )}
 
