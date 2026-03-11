@@ -200,6 +200,10 @@ const UserMyPage: React.FC = () => {
   const [isAssessmentEditing, setIsAssessmentEditing] = useState(false)
   const [assessmentLoading, setAssessmentLoading] = useState(false)
 
+  // サービス等利用計画
+  const [servicePlanText, setServicePlanText] = useState('')
+  const [servicePlanCreatedAt, setServicePlanCreatedAt] = useState('')
+
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -362,7 +366,7 @@ const UserMyPage: React.FC = () => {
           .from('user_assessments')
           .select('*')
           .eq('user_id', authenticatedUserId)
-          .single()
+          .maybeSingle()
 
         if (!assessmentError && assessmentRecord) {
           const loaded = {
@@ -379,6 +383,20 @@ const UserMyPage: React.FC = () => {
           }
           setAssessmentData(loaded)
           setOriginalAssessmentData(loaded)
+        }
+
+        // サービス等利用計画データ読み込み
+        const { data: planRecord } = await supabase
+          .from('user_service_plans')
+          .select('plan_text, created_at')
+          .eq('user_id', authenticatedUserId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (planRecord) {
+          setServicePlanText(planRecord.plan_text || '')
+          setServicePlanCreatedAt(planRecord.created_at || '')
         }
 
       } catch (error) {
@@ -733,11 +751,13 @@ const UserMyPage: React.FC = () => {
     setMessage(null)
     try {
       const userId = user.id
+
+      // 1. アセスメントデータ保存
       const { data: existing } = await supabase
         .from('user_assessments')
         .select('user_id')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
 
       const payload = { ...assessmentData, user_id: userId, updated_at: new Date().toISOString() }
 
@@ -753,9 +773,54 @@ const UserMyPage: React.FC = () => {
           .insert({ ...payload, created_at: new Date().toISOString() })
         if (error) throw new Error(error.message)
       }
+
+      // 2. Gemini APIでサービス等利用計画を生成
+      setMessage({ type: 'success', text: 'アセスメントを保存しました。サービス等利用計画を生成中...' })
+      const genRes = await fetch('/api/generate-service-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          ...assessmentData,
+          user_name: user.user_metadata?.full_name || ''
+        }),
+        redirect: 'error',
+        cache: 'no-store',
+      })
+      if (!genRes.ok) {
+        const errData = await genRes.json()
+        throw new Error(errData.error || 'サービス等利用計画の生成に失敗しました')
+      }
+      const { planText } = await genRes.json()
+
+      // 3. サービス等利用計画をDBに保存
+      const now = new Date().toISOString()
+      const { data: existingPlan } = await supabase
+        .from('user_service_plans')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (existingPlan) {
+        const { error } = await supabase
+          .from('user_service_plans')
+          .update({ plan_text: planText, updated_at: now })
+          .eq('user_id', userId)
+        if (error) throw new Error(error.message)
+      } else {
+        const { error } = await supabase
+          .from('user_service_plans')
+          .insert({ user_id: userId, plan_text: planText, created_at: now, updated_at: now })
+        if (error) throw new Error(error.message)
+      }
+
+      setServicePlanText(planText)
+      setServicePlanCreatedAt(now)
       setOriginalAssessmentData(assessmentData)
       setIsAssessmentEditing(false)
-      setMessage({ type: 'success', text: 'アセスメントを保存しました' })
+      setMessage({ type: 'success', text: 'アセスメントを保存し、サービス等利用計画を生成しました' })
     } catch (error: unknown) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'アセスメントの保存に失敗しました' })
     } finally {
@@ -1548,24 +1613,47 @@ const UserMyPage: React.FC = () => {
           {/* サービス等利用計画タブ */}
           {activeTab === 'support' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0 }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0, marginBottom: '0.5rem' }}>
                   サービス等利用計画
                 </h3>
+                {servicePlanCreatedAt && (
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    最終生成日時：{new Date(servicePlanCreatedAt).toLocaleString('ja-JP')}
+                  </p>
+                )}
               </div>
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 1rem',
-                background: '#f9fafb',
-                borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText size={48} style={{ color: '#d1d5db', marginBottom: '1rem' }} />
-                <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>この機能は準備中です</p>
-              </div>
+
+              {servicePlanText ? (
+                <div style={{
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  padding: '1.5rem',
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'inherit',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.8',
+                  color: '#111827'
+                }}>
+                  {servicePlanText}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '4rem 1rem',
+                  background: '#f9fafb',
+                  borderRadius: '0.5rem',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <FileText size={48} style={{ color: '#d1d5db', marginBottom: '1rem' }} />
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>まだ計画書が生成されていません</p>
+                  <p style={{ color: '#9ca3af', fontSize: '0.75rem' }}>「アセスメント」タブで回答を保存すると自動生成されます</p>
+                </div>
+              )}
               {false && <form onSubmit={handleProfileSubmit}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                  {/* 緊急連絡先 */}
+                  {/* サービス等利用計画タブ旧コンテンツ（削除済み） */}
                   <div>
                     <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>
                       <Shield size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
