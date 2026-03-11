@@ -796,8 +796,8 @@ const UserMyPage: React.FC = () => {
   // タブデータ
   const tabs = [
     { key: 'profile', label: '基本情報', icon: User },
-    { key: 'personal', label: '個人情報', icon: Heart },
-    { key: 'support', label: 'サポート情報', icon: Shield },
+    { key: 'personal', label: 'アセスメント', icon: Activity },
+    { key: 'support', label: 'サービス等利用計画', icon: FileText },
     { key: 'account', label: 'アカウント設定', icon: Settings },
     { key: 'bookmarks', label: 'ブックマーク', icon: Star },
     { key: 'messages', label: 'メッセージ', icon: MessageCircle }
@@ -1072,19 +1072,177 @@ const UserMyPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* 個人情報セクション */}
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>
+                    <Heart size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                    個人情報
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                        年齢
+                      </label>
+                      <MyPageInput
+                        name="age"
+                        type="number"
+                        value={profileData.age}
+                        onChange={handleProfileChange}
+                        placeholder="25"
+                        min="0"
+                        max="120"
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                        性別
+                      </label>
+                      <select
+                        name="gender"
+                        value={profileData.gender}
+                        onChange={handleProfileChange}
+                        disabled={!isEditing}
+                        style={{
+                          width: '100%', padding: '0.75rem', border: '1px solid #d1d5db',
+                          borderRadius: '0.5rem', fontSize: '0.875rem',
+                          backgroundColor: !isEditing ? '#f9fafb' : 'white',
+                          color: !isEditing ? '#6b7280' : '#111827'
+                        }}
+                      >
+                        <option value="">選択してください</option>
+                        <option value="男性">男性</option>
+                        <option value="女性">女性</option>
+                        <option value="その他">その他</option>
+                        <option value="回答しない">回答しない</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.75rem' }}>
+                      <Heart size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                      障害の種類（複数選択可）
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem' }}>
+                      {DISABILITY_TYPES.map(type => (
+                        <label key={type} style={{
+                          display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem',
+                          border: '1px solid #e5e7eb', borderRadius: '0.375rem',
+                          cursor: isEditing ? 'pointer' : 'not-allowed',
+                          background: profileData.disability_types.includes(type) ? '#dcfce7' : (!isEditing ? '#f9fafb' : 'white'),
+                          opacity: !isEditing ? 0.7 : 1,
+                          transition: 'all 0.2s'
+                        }}>
+                          <input
+                            type="checkbox"
+                            name="disability_types"
+                            value={type}
+                            checked={profileData.disability_types.includes(type)}
+                            onChange={handleProfileChange}
+                            disabled={!isEditing}
+                            style={{ accentColor: '#22c55e' }}
+                          />
+                          <span style={{ fontSize: '0.875rem' }}>{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                      障害の等級・程度
+                    </label>
+                    <MyPageInput
+                      name="disability_grade"
+                      type="text"
+                      value={profileData.disability_grade}
+                      onChange={handleProfileChange}
+                      placeholder="例：身体障害者手帳1級"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+
+                {/* 保護者・通知設定セクション */}
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>
+                    <Shield size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                    保護者情報・通知設定
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                        保護者・家族名
+                      </label>
+                      <MyPageInput
+                        name="guardian_name"
+                        type="text"
+                        value={profileData.guardian_name}
+                        onChange={handleProfileChange}
+                        placeholder="山田 花子"
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                        保護者・家族の電話番号
+                      </label>
+                      <MyPageInput
+                        name="guardian_phone"
+                        type="tel"
+                        value={profileData.guardian_phone}
+                        onChange={handleProfileChange}
+                        placeholder="090-1234-5678"
+                        disabled={!isEditing}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.75rem' }}>
+                      <Bell size={16} style={{ display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                      通知設定
+                    </h4>
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      cursor: isEditing ? 'pointer' : 'not-allowed',
+                      opacity: !isEditing ? 0.7 : 1,
+                      padding: '0.75rem',
+                      background: !isEditing ? '#f9fafb' : '#f0fdf4',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.5rem'
+                    }}>
+                      <input
+                        type="checkbox"
+                        name="receive_notifications"
+                        checked={profileData.receive_notifications}
+                        onChange={handleProfileChange}
+                        disabled={!isEditing}
+                        style={{ accentColor: '#22c55e' }}
+                      />
+                      <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+                        新しいサービスや空き情報のメール通知を受け取る
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
                 {isEditing && (
                   <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-                    <MyPageButton 
-                      type="submit" 
-                      variant="primary" 
+                    <MyPageButton
+                      type="submit"
+                      variant="primary"
                       loading={loading}
                     >
                       <Save size={16} />
-                      {loading ? '保存中...' : '基本情報を保存'}
+                      {loading ? '保存中...' : 'プロフィールを保存'}
                     </MyPageButton>
-                    <MyPageButton 
-                      type="button" 
-                      variant="secondary" 
+                    <MyPageButton
+                      type="button"
+                      variant="secondary"
                       onClick={handleCancelEdit}
                     >
                       キャンセル
@@ -1095,24 +1253,27 @@ const UserMyPage: React.FC = () => {
             </div>
           )}
 
-          {/* 個人情報タブ */}
+          {/* アセスメントタブ */}
           {activeTab === 'personal' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0 }}>
-                  個人情報
+                  アセスメント
                 </h3>
-                <MyPageButton
-                  variant={isEditing ? "secondary" : "primary"}
-                  onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)}
-                  disabled={loading}
-                >
-                  <Edit3 size={16} />
-                  {isEditing ? '編集をキャンセル' : '編集する'}
-                </MyPageButton>
+              </div>
+              <div style={{
+                textAlign: 'center',
+                padding: '4rem 1rem',
+                background: '#f9fafb',
+                borderRadius: '0.5rem',
+                border: '1px solid #e5e7eb'
+              }}>
+                <FileText size={48} style={{ color: '#d1d5db', marginBottom: '1rem' }} />
+                <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>この機能は準備中です</p>
               </div>
 
-              <form onSubmit={handleProfileSubmit}>
+              {/* アセスメントタブの旧コンテンツ（削除済み） */}
+              {false && <form onSubmit={handleProfileSubmit}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
@@ -1219,28 +1380,29 @@ const UserMyPage: React.FC = () => {
                     </MyPageButton>
                   </div>
                 )}
-              </form>
+              </form>}
             </div>
           )}
 
-          {/* サポート情報タブ */}
+          {/* サービス等利用計画タブ */}
           {activeTab === 'support' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0 }}>
-                  サポート情報
+                  サービス等利用計画
                 </h3>
-                <MyPageButton
-                  variant={isEditing ? "secondary" : "primary"}
-                  onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)}
-                  disabled={loading}
-                >
-                  <Edit3 size={16} />
-                  {isEditing ? '編集をキャンセル' : '編集する'}
-                </MyPageButton>
               </div>
-
-              <form onSubmit={handleProfileSubmit}>
+              <div style={{
+                textAlign: 'center',
+                padding: '4rem 1rem',
+                background: '#f9fafb',
+                borderRadius: '0.5rem',
+                border: '1px solid #e5e7eb'
+              }}>
+                <FileText size={48} style={{ color: '#d1d5db', marginBottom: '1rem' }} />
+                <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>この機能は準備中です</p>
+              </div>
+              {false && <form onSubmit={handleProfileSubmit}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                   {/* 緊急連絡先 */}
                   <div>
@@ -1406,7 +1568,7 @@ const UserMyPage: React.FC = () => {
                     </MyPageButton>
                   </div>
                 )}
-              </form>
+              </form>}
             </div>
           )}
 
