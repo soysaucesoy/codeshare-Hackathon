@@ -183,6 +183,23 @@ const UserMyPage: React.FC = () => {
 
   const [originalData, setOriginalData] = useState(profileData)
 
+  // アセスメントデータ
+  const [assessmentData, setAssessmentData] = useState({
+    life_history: '',
+    medical_history: '',
+    medical_usage: '',
+    welfare_equipment: '',
+    daily_life_self: '',
+    daily_life_guardian: '',
+    desired_life: '',
+    family_requests: '',
+    support_status: '',
+    assessment_other: ''
+  })
+  const [originalAssessmentData, setOriginalAssessmentData] = useState(assessmentData)
+  const [isAssessmentEditing, setIsAssessmentEditing] = useState(false)
+  const [assessmentLoading, setAssessmentLoading] = useState(false)
+
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -339,6 +356,30 @@ const UserMyPage: React.FC = () => {
         
         setProfileData(userData)
         setOriginalData(userData)
+
+        // アセスメントデータ読み込み
+        const { data: assessmentRecord, error: assessmentError } = await supabase
+          .from('user_assessments')
+          .select('*')
+          .eq('user_id', authenticatedUserId)
+          .single()
+
+        if (!assessmentError && assessmentRecord) {
+          const loaded = {
+            life_history: assessmentRecord.life_history || '',
+            medical_history: assessmentRecord.medical_history || '',
+            medical_usage: assessmentRecord.medical_usage || '',
+            welfare_equipment: assessmentRecord.welfare_equipment || '',
+            daily_life_self: assessmentRecord.daily_life_self || '',
+            daily_life_guardian: assessmentRecord.daily_life_guardian || '',
+            desired_life: assessmentRecord.desired_life || '',
+            family_requests: assessmentRecord.family_requests || '',
+            support_status: assessmentRecord.support_status || '',
+            assessment_other: assessmentRecord.assessment_other || ''
+          }
+          setAssessmentData(loaded)
+          setOriginalAssessmentData(loaded)
+        }
 
       } catch (error) {
         console.error('ユーザーデータ読み込みエラー:', error)
@@ -677,6 +718,54 @@ const UserMyPage: React.FC = () => {
   const handleCancelEdit = () => {
     setProfileData(originalData)
     setIsEditing(false)
+    setMessage(null)
+  }
+
+  const handleAssessmentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setAssessmentData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleAssessmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setAssessmentLoading(true)
+    setMessage(null)
+    try {
+      const userId = user.id
+      const { data: existing } = await supabase
+        .from('user_assessments')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single()
+
+      const payload = { ...assessmentData, user_id: userId, updated_at: new Date().toISOString() }
+
+      if (existing) {
+        const { error } = await supabase
+          .from('user_assessments')
+          .update(payload)
+          .eq('user_id', userId)
+        if (error) throw new Error(error.message)
+      } else {
+        const { error } = await supabase
+          .from('user_assessments')
+          .insert({ ...payload, created_at: new Date().toISOString() })
+        if (error) throw new Error(error.message)
+      }
+      setOriginalAssessmentData(assessmentData)
+      setIsAssessmentEditing(false)
+      setMessage({ type: 'success', text: 'アセスメントを保存しました' })
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'アセスメントの保存に失敗しました' })
+    } finally {
+      setAssessmentLoading(false)
+    }
+  }
+
+  const handleCancelAssessmentEdit = () => {
+    setAssessmentData(originalAssessmentData)
+    setIsAssessmentEditing(false)
     setMessage(null)
   }
 
@@ -1240,13 +1329,6 @@ const UserMyPage: React.FC = () => {
                       <Save size={16} />
                       {loading ? '保存中...' : 'プロフィールを保存'}
                     </MyPageButton>
-                    <MyPageButton
-                      type="button"
-                      variant="secondary"
-                      onClick={handleCancelEdit}
-                    >
-                      キャンセル
-                    </MyPageButton>
                   </div>
                 )}
               </form>
@@ -1256,23 +1338,102 @@ const UserMyPage: React.FC = () => {
           {/* アセスメントタブ */}
           {activeTab === 'personal' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0 }}>
                   アセスメント
                 </h3>
-              </div>
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 1rem',
-                background: '#f9fafb',
-                borderRadius: '0.5rem',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText size={48} style={{ color: '#d1d5db', marginBottom: '1rem' }} />
-                <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>この機能は準備中です</p>
+                <MyPageButton
+                  variant={isAssessmentEditing ? 'secondary' : 'primary'}
+                  onClick={() => isAssessmentEditing ? handleCancelAssessmentEdit() : setIsAssessmentEditing(true)}
+                  disabled={assessmentLoading}
+                >
+                  <Edit3 size={16} />
+                  {isAssessmentEditing ? '編集をキャンセル' : '編集する'}
+                </MyPageButton>
               </div>
 
-              {/* アセスメントタブの旧コンテンツ（削除済み） */}
+              <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.75rem', lineHeight: '1.6', padding: '0.75rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem' }}>
+                簡単なアセスメントシートに回答を記入して保存ボタンを押すことで、サービス等利用計画が自動的に生成されます。
+              </p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+                ※ 全項目必須です。該当しない場合は「なし」と記入してください。
+              </p>
+
+              <form onSubmit={handleAssessmentSubmit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {[
+                    { num: '①', name: 'life_history', label: '生活歴', placeholder: '例：小中と普通学校、高校は支援学校へ通い、卒業。小学校高学年からいじめられた経験があり、中学１年生の夏ごろより不登校。中学２年から小児精神科通院開始。広汎性発達障害の診断。中学卒業時に療育手帳B2を取得。支援学校高等部を卒業後、一旦就職するものの、退職。その後は自宅での生活。' },
+                    { num: '②', name: 'medical_history', label: '病歴・障がい歴', placeholder: '例：2004年3月に療育手帳B2を取得。' },
+                    { num: '③', name: 'medical_usage', label: '医療機関利用状況（現在の受診状況、受診科目、頻度、主治医、どの疾患での受診）', placeholder: '例：中学２年から精神科通院。現在は４週間に１回。広汎性発達障がい。抑うつ状態が強く、服薬を続けている。抑うつ状態や混乱が強い時は、２週間に１回の診察となる。' },
+                    { num: '④', name: 'welfare_equipment', label: '現在使用している福祉用具', placeholder: '例：点字器、補聴器、車椅子、ポータブルトイレ' },
+                    { num: '⑤', name: 'daily_life_self', label: '本人の生活状況（生活の一日の流れ）', placeholder: '例：7:30に起床し、食事後は自宅で過ごす。昼間は近所の幼馴染の友達と会話する時間がある。テレビを見たり、好きなアイドルのCDを聴いたりして、21:30に就寝する。' },
+                    { num: '⑥', name: 'daily_life_guardian', label: '保護者の生活状況（生活の一日の流れ）', placeholder: '例：9:00に本人を迎えに行き、姉か兄の家で昼食・夕食を食べさせ、本人宅に送り、就寝準備を見守る。21:00に帰宅し、23:00に就寝する。' },
+                    { num: '⑦', name: 'desired_life', label: '本人の希望する暮らし', placeholder: '例：就職しないといけないと思うが、具体的に何をどうすればいいのか分からない。具体的に教えて欲しい。家族も年をとってくるし、いつまでも頼りにしていてはいけないと思う。自分のことを自分で少しはできるようにならないといけないと思う。' },
+                    { num: '⑧', name: 'family_requests', label: '家族の要望', placeholder: '例：親亡き後一人で暮らせるように、時間がかかってもいいので、仕事に就けるようにして欲しい。' },
+                    { num: '⑨', name: 'support_status', label: '支援の状況（名称、提供機関、支援内容、頻度）', placeholder: '例：精神科クリニック、通院とカウンセリング、月1回' },
+                    { num: '⑩', name: 'assessment_other', label: 'その他', placeholder: '例：日常生活では、中高生くらいの男子生徒が集まるところで、フラッシュバックを起こしてしまう。聴覚過敏で人の集まるところでは、イヤーマフを付ける。' }
+                  ].map(({ num, name, label, placeholder }) => (
+                    <div key={name}>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '1.5rem',
+                          height: '1.5rem',
+                          background: '#22c55e',
+                          color: 'white',
+                          borderRadius: '50%',
+                          fontSize: '1.5rem',
+                          fontWeight: 700,
+                          marginRight: '0.75rem',
+                          flexShrink: 0,
+                          verticalAlign: 'middle'
+                        }}>{num}</span>
+                        {label}
+                        <span style={{ color: '#ef4444', marginLeft: '0.25rem' }}>*</span>
+                      </label>
+                      <textarea
+                        name={name}
+                        value={assessmentData[name as keyof typeof assessmentData]}
+                        onChange={handleAssessmentChange}
+                        placeholder={isAssessmentEditing ? placeholder : ''}
+                        rows={4}
+                        required
+                        disabled={!isAssessmentEditing}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          resize: 'vertical',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          lineHeight: '1.6',
+                          backgroundColor: !isAssessmentEditing ? '#f9fafb' : 'white',
+                          color: !isAssessmentEditing ? '#6b7280' : '#111827',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {isAssessmentEditing && (
+                  <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
+                    <MyPageButton
+                      type="submit"
+                      variant="primary"
+                      loading={assessmentLoading}
+                    >
+                      <Save size={16} />
+                      {assessmentLoading ? '保存中...' : 'アセスメントを保存'}
+                    </MyPageButton>
+                  </div>
+                )}
+              </form>
+
               {false && <form onSubmit={handleProfileSubmit}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
