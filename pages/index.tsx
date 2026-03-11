@@ -848,30 +848,6 @@ const SearchResults: React.FC<{
               )}
             </>
           )}
-
-          {!isLoggedIn && !isBookmarkMode && facilities.length > 0 && (
-            <div style={{
-              marginTop: '2rem',
-              marginBottom: '1.25rem',
-              padding: '1rem',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: '0.5rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                <div style={{ color: '#2563eb', marginRight: '0.75rem'}}>💡</div>
-                <div>
-                  <p style={{ color: '#1e40af', fontWeight: '500', margin: 0 }}>ブックマーク機能について</p>
-                  <p style={{ color: '#1e40af', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
-                    <Link href="/auth/userlogin" style={{ textDecoration: 'underline', color: '#1d4ed8' }}>
-                      ログイン
-                    </Link>
-                    すると、気になる事業所をブックマークして後で確認できます。
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>
