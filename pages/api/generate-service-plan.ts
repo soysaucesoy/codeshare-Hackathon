@@ -1,5 +1,6 @@
 // pages/api/generate-service-plan.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { createClient } from '@supabase/supabase-js'
 
 interface AssessmentInput {
   life_history: string
@@ -23,6 +24,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY が設定されていません' })
+  }
+
+  // ユーザー認証チェック
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  let userId: string | null = null
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token)
+    userId = user?.id ?? null
   }
 
   const assessment: AssessmentInput = req.body
@@ -78,7 +91,7 @@ JSONのみを返してください。説明文や\`\`\`は不要です。`
   // 指数バックオフ付きリトライ（429対策）
   const fetchWithRetry = async (retries = 3, delayMs = 2000): Promise<Response> => {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,36 +136,32 @@ JSONのみを返してください。説明文や\`\`\`は不要です。`
 
     const planJson = JSON.parse(jsonMatch[0])
 
-    // テキストとして整形して1つの文字列にする
-    const lines: string[] = []
-    lines.push(`■ 計画作成日\n${planJson['計画作成日']}`)
-    lines.push(`■ 利用者が希望する生活\n${planJson['利用者が希望する生活']}`)
-    lines.push(`■ 家族が希望する生活\n${planJson['家族が希望する生活']}`)
-    lines.push(`■ 総合的な援助の方針\n${planJson['総合的な援助の方針']}`)
-    lines.push(`■ 長期目標\n${planJson['長期目標']}`)
-    lines.push(`■ 短期目標\n${planJson['短期目標']}`)
+    // DBに保存（認証済みユーザーの場合）
+    let savedAt: string | null = null
+    if (userId) {
+      const now = new Date().toISOString()
+      const planJsonStr = JSON.stringify(planJson)
 
-    const needRows: Array<Record<string, string>> = planJson['ニーズ行'] ?? []
-    if (needRows.length > 0) {
-      lines.push(`■ ニーズと支援目標`)
-      needRows.slice(0, 6).forEach((row, i) => {
-        lines.push(
-          `【${i + 1}行目】\n` +
-          `　優先順位：${row['優先順位'] ?? ''}\n` +
-          `　本人のニーズ：${row['本人のニーズ'] ?? ''}\n` +
-          `　支援目標：${row['支援目標'] ?? ''}\n` +
-          `　達成時期：${row['達成時期'] ?? ''}\n` +
-          `　福祉サービス内容：${row['福祉サービス内容'] ?? ''}\n` +
-          `　本人の役割：${row['本人の役割'] ?? ''}\n` +
-          `　評価時期：${row['評価時期'] ?? ''}\n` +
-          `　その他留意事項：${row['その他留意事項'] ?? ''}`
-        )
-      })
+      const { data: existingPlan } = await supabase
+        .from('user_service_plans')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (existingPlan) {
+        await supabase
+          .from('user_service_plans')
+          .update({ plan_text: planJsonStr, updated_at: now })
+          .eq('user_id', userId)
+      } else {
+        await supabase
+          .from('user_service_plans')
+          .insert({ user_id: userId, plan_text: planJsonStr, created_at: now, updated_at: now })
+      }
+      savedAt = now
     }
 
-    const planText = lines.join('\n\n')
-
-    return res.status(200).json({ planText })
+    return res.status(200).json({ planJson, savedAt })
   } catch (error) {
     console.error('generate-service-plan error:', error)
     return res.status(500).json({ error: error instanceof Error ? error.message : '不明なエラー' })

@@ -24,6 +24,28 @@ const DISABILITY_TYPES: DisabilityType[] = [
   '身体障害', '知的障害', '精神障害', '発達障害', '難病等', 'その他'
 ]
 
+// サービス等利用計画のJSON型
+interface NeedsRow {
+  '優先順位': string
+  '本人のニーズ': string
+  '支援目標': string
+  '達成時期': string
+  '福祉サービス内容': string
+  '本人の役割': string
+  '評価時期': string
+  'その他留意事項': string
+}
+
+interface ServicePlanData {
+  '計画作成日': string
+  '利用者が希望する生活': string
+  '家族が希望する生活': string
+  '総合的な援助の方針': string
+  '長期目標': string
+  '短期目標': string
+  'ニーズ行': NeedsRow[]
+}
+
 // 共通入力コンポーネント
 const MyPageInput: React.FC<{
   name: string
@@ -131,6 +153,136 @@ const MyPageButton: React.FC<{
   )
 }
 
+// サービス等利用計画 表示コンポーネント
+const ServicePlanView: React.FC<{ plan: ServicePlanData }> = ({ plan }) => {
+  const needsRows = plan['ニーズ行'] ?? []
+
+  const infoCard = (label: string, value: string, color: string, bg: string) => (
+    <div style={{
+      background: bg,
+      border: `1px solid ${color}`,
+      borderRadius: '0.75rem',
+      padding: '1rem 1.25rem',
+      flex: 1,
+    }}>
+      <p style={{ fontSize: '0.7rem', fontWeight: 700, color: color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
+        {label}
+      </p>
+      <p style={{ fontSize: '0.875rem', color: '#111827', lineHeight: 1.7, margin: 0 }}>{value}</p>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* 基本情報カード */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+        border: '1px solid #a7f3d0',
+        borderRadius: '1rem',
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{
+            background: '#16a34a',
+            color: 'white',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            padding: '0.25rem 0.75rem',
+            borderRadius: '9999px'
+          }}>サービス等利用計画</span>
+          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>計画作成日：{plan['計画作成日']}</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          {infoCard('利用者が希望する生活', plan['利用者が希望する生活'], '#15803d', '#dcfce7')}
+          {infoCard('家族が希望する生活', plan['家族が希望する生活'], '#15803d', '#dcfce7')}
+        </div>
+
+        <div>
+          {infoCard('総合的な援助の方針', plan['総合的な援助の方針'], '#374151', '#f9fafb')}
+        </div>
+      </div>
+
+      {/* 目標カード */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{
+          flex: 1, minWidth: '200px',
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '0.75rem',
+          padding: '1rem 1.25rem'
+        }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#16a34a', marginBottom: '0.4rem' }}>長期目標</p>
+          <p style={{ fontSize: '0.875rem', color: '#111827', lineHeight: 1.7, margin: 0 }}>{plan['長期目標']}</p>
+        </div>
+        <div style={{
+          flex: 1, minWidth: '200px',
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '0.75rem',
+          padding: '1rem 1.25rem'
+        }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#16a34a', marginBottom: '0.4rem' }}>短期目標</p>
+          <p style={{ fontSize: '0.875rem', color: '#111827', lineHeight: 1.7, margin: 0 }}>{plan['短期目標']}</p>
+        </div>
+      </div>
+
+      {/* ニーズ行テーブル */}
+      {needsRows.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#374151', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ width: 4, height: 16, background: '#16a34a', borderRadius: 2, display: 'inline-block' }} />
+            ニーズと支援目標
+          </h4>
+          <div style={{ overflowX: 'auto', borderRadius: '0.75rem', border: '1px solid #e5e7eb' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <thead>
+                <tr style={{ background: '#f3f4f6' }}>
+                  {['優先順位', '本人のニーズ', '支援目標', '達成時期', '福祉サービス内容', '本人の役割', '評価時期', 'その他留意事項'].map((h) => (
+                    <th key={h} style={{
+                      padding: '0.6rem 0.75rem',
+                      textAlign: 'left',
+                      fontWeight: 700,
+                      color: '#374151',
+                      borderBottom: '2px solid #e5e7eb',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.75rem'
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {needsRows.map((row, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#f9fafb', verticalAlign: 'top' }}>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: '#16a34a', color: 'white', fontWeight: 700, fontSize: '0.75rem'
+                      }}>{row['優先順位']}</span>
+                    </td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', lineHeight: 1.6, minWidth: 140 }}>{row['本人のニーズ']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', lineHeight: 1.6, minWidth: 140 }}>{row['支援目標']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', color: '#6b7280' }}>{row['達成時期']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', lineHeight: 1.6, minWidth: 140 }}>{row['福祉サービス内容']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', lineHeight: 1.6, minWidth: 120 }}>{row['本人の役割']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', color: '#6b7280' }}>{row['評価時期']}</td>
+                    <td style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', lineHeight: 1.6, minWidth: 140, color: '#6b7280' }}>{row['その他留意事項']}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // マイページコンポーネント
 const UserMyPage: React.FC = () => {
   const router = useRouter()
@@ -201,7 +353,7 @@ const UserMyPage: React.FC = () => {
   const [assessmentLoading, setAssessmentLoading] = useState(false)
 
   // サービス等利用計画
-  const [servicePlanText, setServicePlanText] = useState('')
+  const [servicePlanData, setServicePlanData] = useState<ServicePlanData | null>(null)
   const [servicePlanCreatedAt, setServicePlanCreatedAt] = useState('')
 
   const [passwordData, setPasswordData] = useState({
@@ -394,8 +546,14 @@ const UserMyPage: React.FC = () => {
           .limit(1)
           .maybeSingle()
 
-        if (planRecord) {
-          setServicePlanText(planRecord.plan_text || '')
+        if (planRecord && planRecord.plan_text) {
+          try {
+            const parsed = JSON.parse(planRecord.plan_text) as ServicePlanData
+            setServicePlanData(parsed)
+          } catch {
+            // 旧フォーマット（プレーンテキスト）は無視
+            setServicePlanData(null)
+          }
           setServicePlanCreatedAt(planRecord.created_at || '')
         }
 
@@ -774,50 +932,28 @@ const UserMyPage: React.FC = () => {
         if (error) throw new Error(error.message)
       }
 
-      // 2. Gemini APIでサービス等利用計画を生成
+      // 2. Gemini APIでサービス等利用計画を生成（サーバー側でDB保存も行う）
       setMessage({ type: 'success', text: 'アセスメントを保存しました。サービス等利用計画を生成中...' })
+      const { data: { session } } = await supabase.auth.getSession()
       const genRes = await fetch('/api/generate-service-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
         },
         body: JSON.stringify({
           ...assessmentData,
           user_name: user.user_metadata?.full_name || ''
-        }),
-        redirect: 'error',
-        cache: 'no-store',
+        })
       })
       if (!genRes.ok) {
         const errData = await genRes.json()
         throw new Error(errData.error || 'サービス等利用計画の生成に失敗しました')
       }
-      const { planText } = await genRes.json()
+      const { planJson, savedAt } = await genRes.json()
 
-      // 3. サービス等利用計画をDBに保存
-      const now = new Date().toISOString()
-      const { data: existingPlan } = await supabase
-        .from('user_service_plans')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle()
-
-      if (existingPlan) {
-        const { error } = await supabase
-          .from('user_service_plans')
-          .update({ plan_text: planText, updated_at: now })
-          .eq('user_id', userId)
-        if (error) throw new Error(error.message)
-      } else {
-        const { error } = await supabase
-          .from('user_service_plans')
-          .insert({ user_id: userId, plan_text: planText, created_at: now, updated_at: now })
-        if (error) throw new Error(error.message)
-      }
-
-      setServicePlanText(planText)
-      setServicePlanCreatedAt(now)
+      setServicePlanData(planJson as ServicePlanData)
+      setServicePlanCreatedAt(savedAt ?? new Date().toISOString())
       setOriginalAssessmentData(assessmentData)
       setIsAssessmentEditing(false)
       setMessage({ type: 'success', text: 'アセスメントを保存し、サービス等利用計画を生成しました' })
@@ -1624,20 +1760,8 @@ const UserMyPage: React.FC = () => {
                 )}
               </div>
 
-              {servicePlanText ? (
-                <div style={{
-                  background: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.5rem',
-                  padding: '1.5rem',
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'inherit',
-                  fontSize: '0.875rem',
-                  lineHeight: '1.8',
-                  color: '#111827'
-                }}>
-                  {servicePlanText}
-                </div>
+              {servicePlanData ? (
+                <ServicePlanView plan={servicePlanData} />
               ) : (
                 <div style={{
                   textAlign: 'center',
