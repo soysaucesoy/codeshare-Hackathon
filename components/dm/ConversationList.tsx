@@ -9,13 +9,16 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void;
   selectedConversationId?: string;
   loading?: boolean;
+  /** 事業者側で利用者プロフィールを表示する際に提供するコールバック */
+  onViewProfile?: (userId: string) => void;
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
   onSelectConversation,
   selectedConversationId,
-  loading = false
+  loading = false,
+  onViewProfile
 }) => {
   const { user } = useAuthContext();
 
@@ -116,32 +119,40 @@ const ConversationList: React.FC<ConversationListProps> = ({
                           !conversation.last_message.is_read;
 
           return (
-            <button
+            <div
               key={conversation.id}
-              onClick={() => onSelectConversation(conversation)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                border: 'none',
-                background: isSelected ? '#f0fdf4' : 'transparent',
                 borderLeft: isSelected ? '4px solid #22c55e' : '4px solid transparent',
-                cursor: 'pointer',
-                textAlign: 'left',
+                background: isSelected ? '#f0fdf4' : 'transparent',
                 transition: 'all 0.2s'
               }}
-              onMouseEnter={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = '#f9fafb';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
             >
+              {/* メイン会話クリックエリア */}
+              <button
+                onClick={() => onSelectConversation(conversation)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = '#f9fafb';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
               {/* アバター */}
               <div style={{
                 width: '48px',
@@ -231,7 +242,43 @@ const ConversationList: React.FC<ConversationListProps> = ({
                   </p>
                 )}
               </div>
-            </button>
+              </button>
+
+              {/* プロフィールを見るボタン（事業者側のみ） */}
+              {onViewProfile && conversation.user_id && user?.id !== conversation.user_id && (
+                <div style={{ paddingLeft: '4.5rem', paddingBottom: '0.75rem', paddingRight: '1rem' }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewProfile(conversation.user_id);
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: '0.375rem 0.875rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#16a34a',
+                      background: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#dcfce7';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f0fdf4';
+                    }}
+                  >
+                    <User size={12} />
+                    プロフィールを見る
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

@@ -178,7 +178,7 @@ const ServicePlanView: React.FC<{ plan: ServicePlanData }> = ({ plan }) => {
       {/* 基本情報カード */}
       <div style={{
         background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-        border: '1px solid #a7f3d0',
+        border: '1px solid #ffffff',
         borderRadius: '1rem',
         padding: '1.5rem',
         display: 'flex',
@@ -198,8 +198,8 @@ const ServicePlanView: React.FC<{ plan: ServicePlanData }> = ({ plan }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {infoCard('利用者が希望する生活', plan['利用者が希望する生活'], '#15803d', '#dcfce7')}
-          {infoCard('家族が希望する生活', plan['家族が希望する生活'], '#15803d', '#dcfce7')}
+          {infoCard('利用者が希望する生活', plan['利用者が希望する生活'], '#374151', '#f9fafb')}
+          {infoCard('家族が希望する生活', plan['家族が希望する生活'], '#374151', '#f9fafb')}
         </div>
 
         <div>
@@ -2030,9 +2030,31 @@ const UserMyPage: React.FC = () => {
                 </div>
               </form>
 
+              {/* プロフィール確認セクション */}
+              <div style={{
+                marginTop: '2rem',
+                padding: '1.5rem',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '0.5rem'
+              }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
+                  自分のプロフィールを確認
+                </h4>
+                <p style={{ fontSize: '0.875rem', color: '#166534', marginBottom: '1rem' }}>
+                  事業者から見えるプロフィールページを確認できます。
+                </p>
+                <MyPageButton
+                  variant="secondary"
+                  onClick={() => user && router.push(`/user/profile/${user.id}`)}
+                >
+                  自分のプロフィールを見る
+                </MyPageButton>
+              </div>
+
               {/* アカウント削除セクション */}
               <div style={{ 
-                marginTop: '3rem', 
+                marginTop: '2rem', 
                 padding: '1.5rem', 
                 background: '#fef2f2', 
                 border: '1px solid #fecaca', 

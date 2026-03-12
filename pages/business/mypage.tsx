@@ -1821,6 +1821,7 @@ const FacilityMyPage: React.FC = () => {
                   }}
                   selectedConversationId={selectedConversation?.id}
                   loading={messagesLoading}
+                  onViewProfile={(userId) => router.push(`/user/profile/${userId}`)}
                 />
               )}
             </div>
