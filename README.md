@@ -51,6 +51,7 @@
 ```
 .
 ├── components/                  # UIコンポーネント
+│   ├── AccountDeletionButton.tsx # アカウント削除ボタン
 │   ├── auth/                    # 認証関連コンポーネント
 │   │   ├── AuthGuard.tsx        #   認証ガード（未認証時のリダイレクト）
 │   │   ├── FacilityAuthForm.tsx #   事業所向け認証フォーム
@@ -137,8 +138,10 @@
 │   │   └── success.tsx          #   送信完了
 │   ├── facilities/              # 事業所詳細
 │   │   └── [id].tsx             #   事業所詳細ページ（動的ルート）
-│   ├── mypage/                  # 利用者マイページ
-│   │   └── index.tsx            #   マイページ
+│   ├── user/                    # 利用者向けページ
+│   │   ├── mypage.tsx           #   利用者マイページ
+│   │   └── profile/
+│   │       └── [userId].tsx     #   利用者プロフィール
 │   └── api/                     # APIルート
 │       ├── register.ts          #   ユーザー登録
 │       ├── delete-user.ts       #   ユーザー削除
@@ -153,8 +156,11 @@
 │       │   └── register.ts     #     事業所登録
 │       ├── search/              #   検索API
 │       │   └── facilities.ts    #     事業所検索
-│       └── service-plans/       #   サービス計画API
-│           └── index.ts         #     サービス計画CRUD
+│       ├── service-plans/       #   サービス計画API
+│       │   └── index.ts         #     サービス計画CRUD
+│       └── users/               #   ユーザーAPI
+│           └── profile/
+│               └── [userId].ts  #     ユーザープロフィール取得
 │
 ├── types/                       # TypeScript型定義
 │   ├── database.ts              # DBスキーマ型・地区・サービスカテゴリ定義
