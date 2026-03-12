@@ -25,7 +25,7 @@ export const useAuthContext = () => {
 };
 
 // 認証が必要なルート（未ログイン時にトップへリダイレクト）
-const PROTECTED_ROUTES = ['/dashboard', '/mypage', '/business/mypage'];
+const PROTECTED_ROUTES = ['/dashboard', '/user/mypage', '/business/mypage'];
 
 // ログイン済みユーザーをリダイレクトするログインページ（verify-email/callbackは除外）
 const AUTH_LOGIN_PAGES = ['/auth/userlogin', '/auth/facilitylogin', '/auth/auth', '/auth/facilityregister', '/auth/register'];

@@ -1,4 +1,4 @@
-// pages/mypage/index.tsx - 修正版 利用者マイページ
+// pages/user/mypage.tsx - 修正版 利用者マイページ
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'

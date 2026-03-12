@@ -72,7 +72,7 @@ const AuthCallback: React.FC = () => {
               
               // ユーザータイプに応じたリダイレクト先を決定
               const userType = authData.user.user_metadata?.user_type
-              const redirectPath = userType === 'facility' ? '/business/mypage' : '/mypage'
+              const redirectPath = userType === 'facility' ? '/business/mypage' : '/user/mypage'
               
               // 3秒後にマイページにリダイレクト
               setTimeout(() => router.push(redirectPath), 3000)
@@ -116,7 +116,7 @@ const AuthCallback: React.FC = () => {
               
               // ユーザータイプに応じたリダイレクト先を決定
               const userType = authData.user.user_metadata?.user_type
-              const redirectPath = userType === 'facility' ? '/business/mypage' : '/mypage'
+              const redirectPath = userType === 'facility' ? '/business/mypage' : '/user/mypage'
               
               // 3秒後にマイページにリダイレクト
               setTimeout(() => router.push(redirectPath), 3000)
@@ -126,7 +126,7 @@ const AuthCallback: React.FC = () => {
             // その他の認証成功
             setStatus('success')
             setMessage('ログインしました')
-            setTimeout(() => router.push('/mypage'), 2000)
+            setTimeout(() => router.push('/user/mypage'), 2000)
             return
           }
         }

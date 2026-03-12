@@ -361,7 +361,7 @@ const FacilityDetailPage: React.FC = () => {
 
     try {
       // 利用者マイページのメッセージタブに遷移
-      router.push(`/mypage?tab=messages&facility=${facility.id}`);
+      router.push(`/user/mypage?tab=messages&facility=${facility.id}`);
     } catch (error) {
       console.error('DM機能エラー:', error);
       alert('メッセージ機能でエラーが発生しました。');
