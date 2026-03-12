@@ -78,50 +78,49 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, myFacilityI
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '1rem',
-        padding: '1rem',
+        gap: '0.5rem',
+        padding: '0.75rem',
         borderBottom: '1px solid #e5e7eb',
         background: '#f9fafb'
       }}>
         <button
           onClick={onClose}
           style={{
-            padding: '0.5rem',
+            padding: '0.375rem',
             border: 'none',
             background: 'none',
             cursor: 'pointer',
             borderRadius: '0.25rem',
             display: 'flex',
             alignItems: 'center',
-            color: '#6b7280'
+            color: '#6b7280',
+            flexShrink: 0
           }}
         >
           <ArrowLeft size={20} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
           <div style={{
-            width: '40px',
-            height: '40px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
             background: '#22c55e',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white'
+            color: 'white',
+            flexShrink: 0
           }}>
-            <User size={20} />
+            <User size={18} />
           </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
-              {getOtherPartyName()}
-            </h3>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {conversation.user_id === user?.id
-                ? (conversation.facility?.name && `事業所: ${conversation.facility.name}`)
-                : (conversation.user?.full_name && `利用者: ${conversation.user.full_name}`)
+                ? (conversation.facility?.name || '事業所')
+                : (conversation.user?.full_name ? `利用者: ${conversation.user.full_name}` : '利用者')
               }
-            </p>
+            </h3>
           </div>
         </div>
 
@@ -129,17 +128,18 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, myFacilityI
         {isFacility && (
           <button
             onClick={() => setShowSurveyModal(true)}
+            title="アンケートを送信"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-              padding: '0.5rem 0.875rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+              padding: '0.375rem 0.5rem',
               background: '#f0fdf4', border: '1px solid #86efac',
               borderRadius: '0.5rem', cursor: 'pointer',
-              fontSize: '0.8125rem', fontWeight: 500, color: '#16a34a',
-              flexShrink: 0
+              fontSize: '0.75rem', fontWeight: 500, color: '#16a34a',
+              flexShrink: 0, whiteSpace: 'nowrap' as const
             }}
           >
-            <ClipboardList size={15} />
-            アンケートを送信
+            <ClipboardList size={14} />
+            アンケート
           </button>
         )}
       </div>

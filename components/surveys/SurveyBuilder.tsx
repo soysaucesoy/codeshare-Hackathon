@@ -264,21 +264,22 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
     <div>
       {/* ヘッダー */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ClipboardList size={20} style={{ color: '#22c55e' }} />
-          <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <ClipboardList size={18} style={{ color: '#22c55e', flexShrink: 0 }} />
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>
             アンケート管理
           </h3>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.5rem 1rem',
+            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+            padding: '0.4rem 0.625rem',
             background: showForm ? '#f3f4f6' : '#22c55e',
             color: showForm ? '#374151' : 'white',
             border: 'none', borderRadius: '0.5rem',
-            cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500
+            cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 500,
+            whiteSpace: 'nowrap' as const, flexShrink: 0
           }}
         >
           {showForm ? <X size={16} /> : <Plus size={16} />}
