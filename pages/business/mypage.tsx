@@ -972,9 +972,9 @@ const FacilityMyPage: React.FC = () => {
     { key: 'profile', label: '担当者情報', icon: User },
     { key: 'facility', label: '事業所情報', icon: Building2 },
     { key: 'services', label: 'サービス管理', icon: Award },
-    { key: 'account', label: 'アカウント設定', icon: Settings },
+    { key: 'surveys', label: 'アンケート管理', icon: ClipboardList },
     { key: 'messages', label: 'メッセージ', icon: MessageCircle },
-    { key: 'surveys', label: 'アンケート管理', icon: ClipboardList }
+    { key: 'account', label: 'アカウント設定', icon: Settings },
   ]
 
   // ログインチェック

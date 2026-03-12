@@ -1088,9 +1088,9 @@ const UserMyPage: React.FC = () => {
     { key: 'profile', label: '基本情報', icon: User },
     { key: 'personal', label: 'アセスメント', icon: Activity },
     { key: 'support', label: 'サービス等利用計画', icon: FileText },
-    { key: 'account', label: 'アカウント設定', icon: Settings },
     { key: 'bookmarks', label: 'ブックマーク', icon: Star },
-    { key: 'messages', label: 'メッセージ', icon: MessageCircle }
+    { key: 'messages', label: 'メッセージ', icon: MessageCircle },
+    { key: 'account', label: 'アカウント設定', icon: Settings }
   ]
 
   // ログインチェック
