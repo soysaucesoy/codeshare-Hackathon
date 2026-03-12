@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthContext } from '@/components/providers/AuthProvider';
+import { getUserType } from '@/lib/utils/userType';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
 import { useDevice } from '@/hooks/useDevice';
 import { supabase } from '@/lib/supabase/client';
@@ -239,6 +240,7 @@ const FacilityDetailPage: React.FC = () => {
   const [imageError, setImageError] = useState(false);
 
   const isLoggedIn = !!user;
+  const isFacilityUser = getUserType(user) === 'facility';
 
   // 検索に戻るためのURL構築（地図表示状態も考慮）
   const getBackToSearchUrl = () => {
@@ -360,8 +362,13 @@ const FacilityDetailPage: React.FC = () => {
     }
 
     try {
-      // 利用者マイページのメッセージタブに遷移
-      router.push(`/user/mypage?tab=messages&facility=${facility.id}`);
+      if (isFacilityUser) {
+        // 事業者マイページのメッセージタブに遷移
+        router.push(`/business/mypage?tab=messages&facility=${facility.id}`);
+      } else {
+        // 利用者マイページのメッセージタブに遷移
+        router.push(`/user/mypage?tab=messages&facility=${facility.id}`);
+      }
     } catch (error) {
       console.error('DM機能エラー:', error);
       alert('メッセージ機能でエラーが発生しました。');
@@ -671,7 +678,7 @@ const FacilityDetailPage: React.FC = () => {
                     (isLoggedIn ? '1fr' : 'none'),
                   gap: '1rem'
                 }}>
-                  {/* メッセージボタン：ログイン時のみ表示 */}
+                  {/* メッセージボタン：ログイン中の全ユーザーに表示 */}
                   {isLoggedIn && (
                     <button
                       onClick={handleDMClick}
@@ -827,7 +834,7 @@ const FacilityDetailPage: React.FC = () => {
               {/* お問い合わせ情報 */}
               <InfoCard title="お問い合わせ" icon={<MessageCircle size={20} />}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {/* メッセージボタン：ログイン時のみ表示 */}
+                  {/* メッセージボタン：ログイン中の全ユーザーに表示 */}
                   {isLoggedIn && (
                     <button
                       onClick={handleDMClick}

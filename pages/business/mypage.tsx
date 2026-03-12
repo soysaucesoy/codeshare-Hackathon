@@ -702,7 +702,7 @@ const ServiceManagement: React.FC<{
 const FacilityMyPage: React.FC = () => {
   const router = useRouter()
   const { user, signOut } = useAuthContext()
-  const { conversations, fetchConversations, loading: messagesLoading, totalUnreadCount } = useMessages()
+  const { conversations, fetchConversations, getOrCreateConversation, loading: messagesLoading, totalUnreadCount } = useMessages()
   
   const [activeTab, setActiveTab] = useState<'profile' | 'facility' | 'services' | 'account' | 'messages' | 'surveys'>('profile')
   const [isEditing, setIsEditing] = useState(false)
@@ -713,6 +713,32 @@ const FacilityMyPage: React.FC = () => {
   // DM関連の状態
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
   const [showMessageThread, setShowMessageThread] = useState(false)
+
+  // ?tab=messages&facility=XX クエリパラム処理（他事業所詳細からの遷移）
+  useEffect(() => {
+    const { tab, facility } = router.query
+    if (tab === 'messages' && facility && user) {
+      setActiveTab('messages')
+      const handleFacilityMessage = async () => {
+        try {
+          const facilityId = Array.isArray(facility) ? facility[0] : facility
+          const conversationId = await getOrCreateConversation(
+            user.id,
+            parseInt(facilityId)
+          )
+          await fetchConversations()
+          const conv = conversations.find(c => c.id === conversationId) ||
+            { id: conversationId, user_id: user.id, facility_id: parseInt(facilityId), last_message_at: new Date().toISOString(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+          setSelectedConversation(conv)
+          setShowMessageThread(true)
+        } catch (err) {
+          console.error('会話作成エラー:', err)
+        }
+      }
+      handleFacilityMessage()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query, user, getOrCreateConversation])
   
   const [profileData, setProfileData] = useState({
     // 担当者情報 (usersテーブル)
@@ -1780,6 +1806,7 @@ const FacilityMyPage: React.FC = () => {
               {showMessageThread && selectedConversation ? (
                 <MessageThread
                   conversation={selectedConversation}
+                  myFacilityId={profileData.facility_id ? Number(profileData.facility_id) : undefined}
                   onClose={() => {
                     setShowMessageThread(false)
                     setSelectedConversation(null)
