@@ -30,6 +30,7 @@ interface Service {
 
 interface Facility {
   id: number;
+  profile_id?: string;
   name: string;
   description: string | null;
   appeal_points: string | null;
@@ -238,9 +239,11 @@ const FacilityDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [myFacilityId, setMyFacilityId] = useState<number | null>(null);
 
   const isLoggedIn = !!user;
   const isFacilityUser = getUserType(user) === 'facility';
+  const isOwnFacility = isFacilityUser && myFacilityId !== null && facility !== null && myFacilityId === facility.id;
 
   // 検索に戻るためのURL構築（地図表示状態も考慮）
   const getBackToSearchUrl = () => {
@@ -337,6 +340,20 @@ const FacilityDetailPage: React.FC = () => {
 
     fetchFacility();
   }, [id]);
+
+  // 事業者ログイン時、自分の事業所IDを取得
+  useEffect(() => {
+    if (!isFacilityUser || !user) return;
+    const fetchMyFacilityId = async () => {
+      const { data } = await supabase
+        .from('facilities')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setMyFacilityId(data.id);
+    };
+    fetchMyFacilityId();
+  }, [isFacilityUser, user]);
 
   // ブックマークトグル
   const handleBookmarkToggle = async () => {
@@ -669,7 +686,7 @@ const FacilityDetailPage: React.FC = () => {
               </div>
 
               {/* アクションボタン（モバイル用） */}
-              {isMobile && (
+              {isMobile && !isOwnFacility && (
                 <div style={{
                   marginTop: '1.25rem',
                   display: 'grid',
@@ -832,6 +849,7 @@ const FacilityDetailPage: React.FC = () => {
           {isDesktop && (
             <div>
               {/* お問い合わせ情報 */}
+              {!isOwnFacility && (
               <InfoCard title="お問い合わせ" icon={<MessageCircle size={20} />}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* メッセージボタン：ログイン中の全ユーザーに表示 */}
@@ -883,6 +901,7 @@ const FacilityDetailPage: React.FC = () => {
                   )}
                 </div>
               </InfoCard>
+              )}
             </div>
           )}
         </div>
