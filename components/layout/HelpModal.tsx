@@ -69,8 +69,8 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
           aria-label="閉じる"
         >✕</button>
 
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>
-          ヘルプ
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827', textAlign: 'center' }}>
+          使い方
         </h2>
 
         {/* タブ */}
@@ -132,7 +132,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </Item>
             </Section>
 
-            <Section title="よくある質問" bordered>
+            <Section title="＜よくある質問＞" bordered titleColor="#111827">
               <Faq q="検索しても事業所が表示されない">
                 絞り込み条件を確認し、地域やサービス種別の選択を外して再度お試しください。
               </Faq>
@@ -157,8 +157,8 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
         {activeTab === 'facility' && (
           <div style={{ fontSize: '0.92rem', color: '#374151', lineHeight: 1.7 }}>
             <Section title="事業所情報の管理">
-              <Item label="プロフィール編集">
-                マイページの「基本情報」タブから事業所名・住所・電話番号・Webサイト等を編集できます。
+              <Item label="詳細情報の編集">
+                マイページの「事業者情報」タブから事業所名・住所・電話番号・Webサイト等を編集できます。
               </Item>
               <Item label="サービス情報の設定">
                 提供しているサービス種別（訪問系・日中活動系など）と受け入れ状況を設定できます。利用者の検索結果に反映されます。
@@ -168,7 +168,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
               </Item>
             </Section>
 
-            <Section title="利用者とのメッセージ">
+            <Section title="利用者と連絡を取る">
               <Item label="受信メッセージの確認">
                 マイページの「メッセージ」タブから利用者からの問い合わせを確認し、返信できます。
               </Item>
@@ -178,24 +178,24 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
             </Section>
 
             <Section title="アンケート機能">
-              <Item label="アンケート作成">
-                マイページの「アンケート」タブからオリジナルのアンケートを作成できます。
+              <Item label="アンケートの作成">
+                マイページの「アンケート」タブからアンケートをカスタマイズして作成できます。
               </Item>
               <Item label="アンケートの送信">
-                作成したアンケートをメッセージスレッドから利用者に送信できます。回答結果も確認できます。
+                作成したアンケートを「メッセージ」タブから利用者に送信でき、回答結果も確認できます。
               </Item>
             </Section>
 
             <Section title="アカウント設定">
               <Item label="パスワード変更">
-                マイページの「セキュリティ」タブからパスワードを変更できます。
+                マイページの「アカウント設定」タブからパスワードを変更できます。
               </Item>
               <Item label="アカウント削除">
-                マイページの「セキュリティ」タブからアカウントを削除できます。削除後はデータを復元できませんのでご注意ください。
+                マイページの「アカウント設定」タブからアカウントを削除できます。削除後はデータを復元できませんのでご注意ください。
               </Item>
             </Section>
 
-            <Section title="よくある質問" bordered>
+            <Section title="＜よくある質問＞" bordered titleColor="#111827">
               <Faq q="事業所情報が検索結果に反映されない">
                 情報を保存後、反映まで少し時間がかかる場合があります。しばらく待ってから再度ご確認ください。
               </Faq>
@@ -219,7 +219,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose }) => {
 
 // ───── 補助コンポーネント ─────
 
-const Section: React.FC<{ title: string; children: React.ReactNode; bordered?: boolean }> = ({ title, children, bordered }) => (
+const Section: React.FC<{ title: string; children: React.ReactNode; bordered?: boolean; titleColor?: string }> = ({ title, children, bordered, titleColor }) => (
   <div style={{
     marginBottom: '1.1rem',
     ...(bordered ? {
@@ -228,7 +228,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; bordered?: b
       padding: '0.75rem 0.875rem 0.5rem',
     } : {})
   }}>
-    <p style={{ fontWeight: 'bold', color: '#1d4ed8', marginBottom: '0.4rem', fontSize: '0.93rem' }}>
+    <p style={{ fontWeight: 'bold', color: titleColor ?? '#1d4ed8', marginBottom: '0.4rem', fontSize: '0.93rem' }}>
       {title}
     </p>
     <ul style={{ paddingLeft: '0.5rem', margin: 0, listStyle: 'none' }}>
