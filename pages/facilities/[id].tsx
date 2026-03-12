@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthContext } from '@/components/providers/AuthProvider';
+import { getUserType } from '@/lib/utils/userType';
 import { useBookmarks } from '@/lib/hooks/useBookmarks';
 import { useDevice } from '@/hooks/useDevice';
 import { supabase } from '@/lib/supabase/client';
@@ -29,6 +30,7 @@ interface Service {
 
 interface Facility {
   id: number;
+  profile_id?: string;
   name: string;
   description: string | null;
   appeal_points: string | null;
@@ -237,8 +239,11 @@ const FacilityDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [myFacilityId, setMyFacilityId] = useState<number | null>(null);
 
   const isLoggedIn = !!user;
+  const isFacilityUser = getUserType(user) === 'facility';
+  const isOwnFacility = isFacilityUser && myFacilityId !== null && facility !== null && myFacilityId === facility.id;
 
   // 検索に戻るためのURL構築（地図表示状態も考慮）
   const getBackToSearchUrl = () => {
@@ -336,6 +341,20 @@ const FacilityDetailPage: React.FC = () => {
     fetchFacility();
   }, [id]);
 
+  // 事業者ログイン時、自分の事業所IDを取得
+  useEffect(() => {
+    if (!isFacilityUser || !user) return;
+    const fetchMyFacilityId = async () => {
+      const { data } = await supabase
+        .from('facilities')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setMyFacilityId(data.id);
+    };
+    fetchMyFacilityId();
+  }, [isFacilityUser, user]);
+
   // ブックマークトグル
   const handleBookmarkToggle = async () => {
     if (!isLoggedIn || !facility) {
@@ -360,8 +379,13 @@ const FacilityDetailPage: React.FC = () => {
     }
 
     try {
-      // 利用者マイページのメッセージタブに遷移
-      router.push(`/mypage?tab=messages&facility=${facility.id}`);
+      if (isFacilityUser) {
+        // 事業者マイページのメッセージタブに遷移
+        router.push(`/business/mypage?tab=messages&facility=${facility.id}`);
+      } else {
+        // 利用者マイページのメッセージタブに遷移
+        router.push(`/user/mypage?tab=messages&facility=${facility.id}`);
+      }
     } catch (error) {
       console.error('DM機能エラー:', error);
       alert('メッセージ機能でエラーが発生しました。');
@@ -662,7 +686,7 @@ const FacilityDetailPage: React.FC = () => {
               </div>
 
               {/* アクションボタン（モバイル用） */}
-              {isMobile && (
+              {isMobile && !isOwnFacility && (
                 <div style={{
                   marginTop: '1.25rem',
                   display: 'grid',
@@ -671,7 +695,7 @@ const FacilityDetailPage: React.FC = () => {
                     (isLoggedIn ? '1fr' : 'none'),
                   gap: '1rem'
                 }}>
-                  {/* メッセージボタン：ログイン時のみ表示 */}
+                  {/* メッセージボタン：ログイン中の全ユーザーに表示 */}
                   {isLoggedIn && (
                     <button
                       onClick={handleDMClick}
@@ -825,9 +849,10 @@ const FacilityDetailPage: React.FC = () => {
           {isDesktop && (
             <div>
               {/* お問い合わせ情報 */}
+              {!isOwnFacility && (
               <InfoCard title="お問い合わせ" icon={<MessageCircle size={20} />}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {/* メッセージボタン：ログイン時のみ表示 */}
+                  {/* メッセージボタン：ログイン中の全ユーザーに表示 */}
                   {isLoggedIn && (
                     <button
                       onClick={handleDMClick}
@@ -876,6 +901,7 @@ const FacilityDetailPage: React.FC = () => {
                   )}
                 </div>
               </InfoCard>
+              )}
             </div>
           )}
         </div>

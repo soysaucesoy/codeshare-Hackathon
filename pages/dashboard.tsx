@@ -97,7 +97,7 @@ const DashboardPage: React.FC = () => {
                 <Link href="/" className="cta-primary">
                   検索ページ
                 </Link>
-                <Link href="/mypage" className="cta-primary">
+                <Link href="/user/mypage" className="cta-primary">
                   マイページ
                 </Link>
               </div>

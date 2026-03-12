@@ -8,10 +8,11 @@ import SendSurveyModal from '@/components/surveys/SendSurveyModal';
 
 interface MessageThreadProps {
   conversation: Conversation;
+  myFacilityId?: number;
   onClose: () => void;
 }
 
-const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) => {
+const MessageThread: React.FC<MessageThreadProps> = ({ conversation, myFacilityId, onClose }) => {
   const { user } = useAuthContext();
   const { messages, fetchMessages, sendMessage, loading } = useMessages();
   const [newMessage, setNewMessage] = useState('');
@@ -291,7 +292,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onClose }) 
       {/* アンケート送信モーダル */}
       {showSurveyModal && (
         <SendSurveyModal
-          facilityId={conversation.facility_id}
+          facilityId={myFacilityId ?? conversation.facility_id}
           conversationId={conversation.id}
           onClose={() => setShowSurveyModal(false)}
           onSent={() => fetchMessages(conversation.id)}

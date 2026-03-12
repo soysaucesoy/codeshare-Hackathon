@@ -26,7 +26,7 @@ export const getMyPagePath = (user: User | null): string => {
     case 'facility':
       return '/business/mypage'
     case 'user':
-      return '/mypage'
+      return '/user/mypage'
     default:
       return '/auth/userlogin'
   }

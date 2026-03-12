@@ -702,7 +702,7 @@ const ServiceManagement: React.FC<{
 const FacilityMyPage: React.FC = () => {
   const router = useRouter()
   const { user, signOut } = useAuthContext()
-  const { conversations, fetchConversations, loading: messagesLoading, totalUnreadCount } = useMessages()
+  const { conversations, fetchConversations, getOrCreateConversation, loading: messagesLoading, totalUnreadCount } = useMessages()
   
   const [activeTab, setActiveTab] = useState<'profile' | 'facility' | 'services' | 'account' | 'messages' | 'surveys'>('profile')
   const [isEditing, setIsEditing] = useState(false)
@@ -713,6 +713,32 @@ const FacilityMyPage: React.FC = () => {
   // DM関連の状態
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
   const [showMessageThread, setShowMessageThread] = useState(false)
+
+  // ?tab=messages&facility=XX クエリパラム処理（他事業所詳細からの遷移）
+  useEffect(() => {
+    const { tab, facility } = router.query
+    if (tab === 'messages' && facility && user) {
+      setActiveTab('messages')
+      const handleFacilityMessage = async () => {
+        try {
+          const facilityId = Array.isArray(facility) ? facility[0] : facility
+          const conversationId = await getOrCreateConversation(
+            user.id,
+            parseInt(facilityId)
+          )
+          await fetchConversations()
+          const conv = conversations.find(c => c.id === conversationId) ||
+            { id: conversationId, user_id: user.id, facility_id: parseInt(facilityId), last_message_at: new Date().toISOString(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+          setSelectedConversation(conv)
+          setShowMessageThread(true)
+        } catch (err) {
+          console.error('会話作成エラー:', err)
+        }
+      }
+      handleFacilityMessage()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query, user, getOrCreateConversation])
   
   const [profileData, setProfileData] = useState({
     // 担当者情報 (usersテーブル)
@@ -749,6 +775,7 @@ const FacilityMyPage: React.FC = () => {
     new: false,
     confirm: false
   })
+  const [toggleLoading, setToggleLoading] = useState(false)
 
   // 事業者データ読み込み
   useEffect(() => {
@@ -957,6 +984,32 @@ const FacilityMyPage: React.FC = () => {
     setMessage(null)
   }
 
+  // 事業所公開状態トグル
+  const handleToggleActive = async () => {
+    if (!profileData.facility_id) return
+    if (!profileData.is_active && !profileData.is_profile_complete) {
+      setMessage({ type: 'error', text: '公開するには、必要な情報（事業所名・住所・地区・説明文）をすべて入力してください' })
+      return
+    }
+    setToggleLoading(true)
+    setMessage(null)
+    const newValue = !profileData.is_active
+    try {
+      const { error } = await supabase
+        .from('facilities')
+        .update({ is_active: newValue })
+        .eq('id', profileData.facility_id)
+      if (error) throw error
+      setProfileData(prev => ({ ...prev, is_active: newValue }))
+      setOriginalData(prev => ({ ...prev, is_active: newValue }))
+      setMessage({ type: 'success', text: newValue ? '事業所を公開しました' : '事業所を非公開にしました' })
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || '公開状態の更新に失敗しました' })
+    } finally {
+      setToggleLoading(false)
+    }
+  }
+
   const handleLogout = async () => {
     const { error } = await signOut()
     if (error) {
@@ -972,9 +1025,9 @@ const FacilityMyPage: React.FC = () => {
     { key: 'profile', label: '担当者情報', icon: User },
     { key: 'facility', label: '事業所情報', icon: Building2 },
     { key: 'services', label: 'サービス管理', icon: Award },
-    { key: 'account', label: 'アカウント設定', icon: Settings },
+    { key: 'surveys', label: 'アンケート管理', icon: ClipboardList },
     { key: 'messages', label: 'メッセージ', icon: MessageCircle },
-    { key: 'surveys', label: 'アンケート管理', icon: ClipboardList }
+    { key: 'account', label: 'アカウント設定', icon: Settings },
   ]
 
   // ログインチェック
@@ -1655,32 +1708,62 @@ const FacilityMyPage: React.FC = () => {
                   border: profileData.is_active ? '1px solid #bbf7d0' : '1px solid #fbbf24',
                   borderRadius: '0.5rem'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                    {profileData.is_active ? (
-                      <>
+                  {/* トグルスイッチ */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {profileData.is_active ? (
                         <CheckCircle size={20} style={{ color: '#22c55e' }} />
-                        <span style={{ fontSize: '1rem', fontWeight: 600, color: '#166534' }}>
-                          検索対象として公開中
-                        </span>
-                      </>
-                    ) : (
-                      <>
+                      ) : (
                         <AlertCircle size={20} style={{ color: '#f59e0b' }} />
-                        <span style={{ fontSize: '1rem', fontWeight: 600, color: '#92400e' }}>
-                          {profileData.is_profile_complete ? '公開準備完了' : '非公開（情報未完了）'}
-                        </span>
-                      </>
-                    )}
+                      )}
+                      <span style={{ fontSize: '1rem', fontWeight: 600, color: profileData.is_active ? '#166534' : '#92400e' }}>
+                        {profileData.is_active ? '公開中' : (profileData.is_profile_complete ? '非公開' : '非公開（情報未完了）')}
+                      </span>
+                    </div>
+                    {/* トグルスイッチ本体 */}
+                    <button
+                      type="button"
+                      onClick={handleToggleActive}
+                      disabled={toggleLoading}
+                      title={profileData.is_active ? '非公開にする' : '公開する'}
+                      style={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        width: '3.5rem',
+                        height: '2rem',
+                        borderRadius: '9999px',
+                        border: 'none',
+                        cursor: toggleLoading ? 'not-allowed' : 'pointer',
+                        background: profileData.is_active ? '#22c55e' : '#d1d5db',
+                        transition: 'background 0.2s',
+                        opacity: toggleLoading ? 0.6 : 1,
+                        flexShrink: 0
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute',
+                        width: '1.5rem',
+                        height: '1.5rem',
+                        borderRadius: '50%',
+                        background: 'white',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        transition: 'transform 0.2s',
+                        transform: profileData.is_active ? 'translateX(1.75rem)' : 'translateX(0.25rem)'
+                      }} />
+                    </button>
                   </div>
-                  
+
                   <p style={{ 
                     fontSize: '0.875rem', 
                     color: profileData.is_active ? '#166534' : '#92400e',
                     marginBottom: '0.5rem'
                   }}>
                     {profileData.is_active 
-                      ? '利用者の検索結果に表示されています'
-                      : '必要な情報をすべて入力すると、自動的に公開されます'
+                      ? '利用者の検索結果に表示されています。非公開にするにはトグルをオフにしてください。'
+                      : profileData.is_profile_complete
+                        ? 'トグルをオンにすると検索結果に公開されます。'
+                        : '必要な情報をすべて入力すると公開できます。'
                     }
                   </p>
                   
@@ -1723,6 +1806,7 @@ const FacilityMyPage: React.FC = () => {
               {showMessageThread && selectedConversation ? (
                 <MessageThread
                   conversation={selectedConversation}
+                  myFacilityId={profileData.facility_id ? Number(profileData.facility_id) : undefined}
                   onClose={() => {
                     setShowMessageThread(false)
                     setSelectedConversation(null)
@@ -1737,6 +1821,7 @@ const FacilityMyPage: React.FC = () => {
                   }}
                   selectedConversationId={selectedConversation?.id}
                   loading={messagesLoading}
+                  onViewProfile={(userId) => router.push(`/user/profile/${userId}`)}
                 />
               )}
             </div>

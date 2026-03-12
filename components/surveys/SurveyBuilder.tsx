@@ -1,5 +1,5 @@
 // components/surveys/SurveyBuilder.tsx - アンケート作成・管理UI
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, ChevronUp, ChevronDown, ClipboardList, X, Edit3 } from 'lucide-react'
 import { useSurveys } from '@/lib/hooks/useSurveys'
 import type { Survey, SurveyForm, SurveyQuestionForm, QuestionType } from '@/types/survey'
@@ -32,9 +32,92 @@ const SurveyBuilder: React.FC<SurveyBuilderProps> = ({ facilityId }) => {
     questions: [emptyQuestion()]
   })
 
+  const [hasFetched, setHasFetched] = useState(false)
+
   useEffect(() => {
-    fetchSurveys(facilityId)
-  }, [facilityId, fetchSurveys])
+    const init = async () => {
+      await fetchSurveys(facilityId)
+      setHasFetched(true)
+    }
+    init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facilityId])
+
+  // デフォルトアンケートの定義
+  const DEFAULT_SURVEYS: SurveyForm[] = [
+    {
+      title: '生活習慣アンケート',
+      description: '',
+      questions: [
+        '洗面', '衣服の着脱', '食事', '排泄', '移動', '入浴'
+      ].map((text, i) => ({
+        question_text: text,
+        question_type: 'checkbox' as const,
+        options: ['全介助', '多くを介助', '一部介助', 'ほぼ自立', '自立'],
+        required: true,
+        order_index: i
+      }))
+    },
+    {
+      title: '問題行動アンケート',
+      description: '',
+      questions: [
+        '突然、場にそぐわない大きな声でしゃべったり、奇声を上げることがありますか',
+        '破壊行為がありますか',
+        '他傷行為がありますか',
+        '自傷行為がありますか',
+        'パニックを起こすことがありますか',
+        '施設内や近所を徘徊しますか',
+        '火遊びはしますか',
+        '盗癖がありますか',
+        '人に対する性的トラブルがありますか',
+        '性的な関心が過度にありますか',
+        '黙って外出や外泊することがありますか',
+        '人との関わりを拒絶しますか',
+        '過食がありますか',
+        '拒食がありますか',
+        '著しいこだわりや固執がありますか',
+        '著しい偏食がありますか',
+        '異食がありますか',
+        '抑制の利かない多飲水がありますか',
+        '睡眠の乱れがありますか',
+        '著しい多動がありますか',
+        '便こねがありますか',
+        '脅迫的な排泄行為を繰り返しますか'
+      ].map((text, i) => ({
+        question_text: text,
+        question_type: 'checkbox' as const,
+        options: ['日常的にする', '頻繁にする', 'ときどきする', 'たまにする', 'しない'],
+        required: true,
+        order_index: i
+      }))
+    }
+  ]
+
+  // 初回フェッチ完了後に一度だけデフォルトアンケートを作成
+  const defaultsCreatedRef = useRef(false)
+  useEffect(() => {
+    if (!hasFetched) return
+    if (defaultsCreatedRef.current) return
+    defaultsCreatedRef.current = true
+
+    const existingTitles = surveys.map(s => s.title)
+    const missing = DEFAULT_SURVEYS.filter(s => !existingTitles.includes(s.title))
+    if (missing.length === 0) return
+
+    const createDefaults = async () => {
+      try {
+        for (const surveyForm of missing) {
+          await createSurvey(facilityId, surveyForm)
+        }
+        await fetchSurveys(facilityId)
+      } catch (err) {
+        console.error('デフォルトアンケート作成エラー:', err)
+      }
+    }
+    createDefaults()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasFetched])
 
   const handleAddQuestion = () => {
     setForm(prev => ({
