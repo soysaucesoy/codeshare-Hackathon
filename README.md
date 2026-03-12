@@ -43,6 +43,7 @@
 | 通知 | [react-hot-toast](https://react-hot-toast.com/) |
 | 地図 | [Leaflet](https://leafletjs.com/) / [React-Leaflet](https://react-leaflet.js.org/) |
 | グラフ | [Chart.js](https://www.chartjs.org/) / [React-Chartjs-2](https://react-chartjs-2.js.org/) |
+| AI | [Gemini API](https://ai.google.dev/)（サービス計画の自動生成） |
 | メール | [SendGrid](https://sendgrid.com/) |
 
 ## ディレクトリ構成
