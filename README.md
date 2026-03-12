@@ -2,138 +2,252 @@
 
 <img width="1280" height="720" alt="logo3" src="https://github.com/user-attachments/assets/83717aa7-c33e-4f64-8093-e996aec2285e" />
 
-## 関連リンク 
-
-[説明資料](https://www.canva.com/design/DAG2rB_Px9s/4yV3ZJZcQUK3jZ0obRT1nA/view?utm_content=DAG2rB_Px9s&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6dc62b06f7)
-
-[プレスリリース](https://odhackathon.metro.tokyo.lg.jp/collection/64/?year=2025) 
-
-[プロトタイプ公開URL](https://codeshare-hackathon-bw6g.vercel.app/) 
-
 ## プロジェクト概要
 
 「Care Connect」は、東京都内の障害福祉サービス事業所を検索し、詳細情報を閲覧できるWebアプリケーションです。利用者は、事業所名、地区、提供サービスの種類、空き状況などの条件で事業所を絞り込み検索できます。
 
+## 公開目的
+
+本プロジェクトは以下の目的でオープンソースとして公開しています。
+
+- **ハッカソン成果物の公開**: [東京都オープンデータハッカソン 2025](https://odhackathon.metro.tokyo.lg.jp/collection/64/?year=2025) の成果物として開発されました。障害福祉分野におけるDX推進の一例として広く共有することを目的としています。
+- **リファレンス実装**: 障害福祉サービス検索システムの参考実装として、同様のシステムを構築する際の技術的なベースとして活用いただけます。
+
+## 関連リンク
+
+- [説明資料](https://www.canva.com/design/DAG2rB_Px9s/4yV3ZJZcQUK3jZ0obRT1nA/view?utm_content=DAG2rB_Px9s&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6dc62b06f7)
+- [プレスリリース](https://odhackathon.metro.tokyo.lg.jp/collection/64/?year=2025)
+- [プロトタイプ公開URL](https://codeshare-hackathon-bw6g.vercel.app/)
+
 ## 主な機能
 
-*   **事業所検索**: 事業所名、地区、提供サービス、空き状況による詳細な検索機能。
-*   **事業所情報表示**: 各事業所の詳細情報（説明、アピールポイント、提供サービス、連絡先、画像など）をカード形式で表示。
-*   **ユーザー認証**: Supabaseを利用したユーザー認証機能（ブックマーク、メッセージ機能など、今後の拡張を想定）。
-*   **API連携**: 検索結果は `/api/search/facilities` エンドポイントから取得。
+- **事業所検索**: 事業所名、地区、提供サービス、空き状況による詳細な検索・絞り込み機能
+- **事業所情報表示**: 各事業所の詳細情報（説明、アピールポイント、提供サービス、連絡先、画像など）をカード形式で表示
+- **地図表示**: Leafletを利用したインタラクティブな事業所マップ
+- **ブックマーク**: 気になる事業所をブックマークして管理
+- **DM機能**: 利用者と事業所間のメッセージング
+- **アンケート機能**: 事業所から利用者へのアンケート送信・回答
+- **ユーザー認証**: 利用者（user）と事業所（facility）の2種類のアカウントタイプに対応
+- **サービス計画生成**: AIを利用したサービス計画の自動生成
 
 ## 技術スタック
 
-*   **フレームワーク**: [Next.js](https://nextjs.org/) (React, TypeScript)
-*   **UI/UX**:
-    *   [Tailwind CSS](https://tailwindcss.com/): 高速なUI開発のためのユーティリティファーストCSSフレームワーク
-    *   [Framer Motion](https://www.framer.com/motion/): Reactのためのアニメーションライブラリ
-    *   [Lucide React](https://lucide.dev/): 軽量でカスタマイズ可能なアイコンセット
-    *   [react-hot-toast](https://react-hot-toast.com/): シンプルで美しい通知ライブラリ
-*   **バックエンド & データベース**: [Supabase](https://supabase.com/): オープンソースのFirebase代替（認証、データベース）
-*   **地図**: [Leaflet](https://leafletjs.com/) & [React-Leaflet](https://react-leaflet.js.org/): インタラクティブな地図表示
-*   **グラフ**: [Chart.js](https://www.chartjs.org/) & [React-Chartjs-2](https://react-chartjs-2.js.org/): データ可視化のためのグラフ描画
-*   **フォーム**: [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/): フォーム管理とスキーマバリデーション
-*   **その他**:
-    *   `@sendgrid/mail`: メール送信
-    *   `csv-parser`: CSVデータの解析
+| カテゴリ | 技術 |
+|---|---|
+| フレームワーク | [Next.js 15](https://nextjs.org/) (Pages Router) / React 19 / TypeScript |
+| データベース & 認証 | [Supabase](https://supabase.com/) (PostgreSQL, RLS, 認証) |
+| スタイリング | [Tailwind CSS 4](https://tailwindcss.com/) |
+| フォーム | [React Hook Form](https://react-hook-form.com/) / [Zod](https://zod.dev/) |
+| アニメーション | [Framer Motion](https://www.framer.com/motion/) |
+| アイコン | [Lucide React](https://lucide.dev/) |
+| 通知 | [react-hot-toast](https://react-hot-toast.com/) |
+| 地図 | [Leaflet](https://leafletjs.com/) / [React-Leaflet](https://react-leaflet.js.org/) |
+| グラフ | [Chart.js](https://www.chartjs.org/) / [React-Chartjs-2](https://react-chartjs-2.js.org/) |
+| AI | [Gemini API](https://ai.google.dev/)（サービス計画の自動生成） |
+| メール | [SendGrid](https://sendgrid.com/) |
 
 ## ディレクトリ構成
 
 ```
 .
-├── components/             # UIコンポーネント
-│   ├── layout/             # 共通レイアウトコンポーネント(現在空)
-│   ├── search/             # 検索関連のコンポーネント (FacilityCard, SearchResultsなど)
-│   └── ui/                 # 汎用的なUI要素 (Button, Card, Inputなど（現在toggleswitchのみ）)
-├── hooks/                  # カスタムReactフック
-├── lib/                    # ユーティリティ関数や外部サービス連携ロジック
-│   ├── supabase/           # Supabaseクライアントの初期化と関連ロジック (client.ts, server.ts)
-│   └── utils/              # 汎用ユーティリティ (constants, helpers, validationなど)
-├── pages/                  # Next.jsのページコンポーネントとAPIルート
-│   ├── api/                # APIルート (例: search/facilities.ts)
-│   ├── auth/               # 認証関連ページ
-│   ├── _app.tsx            # アプリケーションのエントリーポイント
-│   ├── index.tsx           # メインの事業所検索ページ
-│   └── search-test.tsx     # 検索機能のテスト用ページ
-├── public/                 # 静的ファイル (画像など)
-├── scripts/                # supabaseへの接続、地区やサービスの設定、重複登録対策のユニークキー
-├── styles/                 # グローバルスタイルやTailwind CSSの設定
-├── types/                  # TypeScriptの型定義
-├── wamnet.csv              # 事業所データ（CSV形式）
-├── next.config.ts          # Next.jsの設定ファイル
-├── package.json            # プロジェクトの依存関係とスクリプト
-└── README.md               # このドキュメント
+├── components/                  # UIコンポーネント
+│   ├── auth/                    # 認証関連コンポーネント
+│   │   ├── AuthGuard.tsx        #   認証ガード（未認証時のリダイレクト）
+│   │   ├── FacilityAuthForm.tsx #   事業所向け認証フォーム
+│   │   └── TabbedAuthForm.tsx   #   タブ切り替え式ログイン/登録フォーム
+│   ├── dm/                      # DM（ダイレクトメッセージ）機能
+│   │   ├── ConversationList.tsx #   会話一覧
+│   │   ├── MessageThread.tsx    #   メッセージスレッド表示
+│   │   └── SurveyCard.tsx       #   アンケートカード表示
+│   ├── layout/                  # 共通レイアウト
+│   │   ├── Footer.tsx           #   フッター
+│   │   ├── Header.tsx           #   ヘッダー（ナビゲーション）
+│   │   └── HelpModal.tsx        #   ヘルプモーダル
+│   ├── providers/               # コンテキストプロバイダー
+│   │   └── AuthProvider.tsx     #   認証状態の提供
+│   ├── search/                  # 検索関連コンポーネント
+│   │   ├── FacilityCard.tsx     #   事業所カード
+│   │   ├── MapView.tsx          #   地図表示（動的インポート用ラッパー）
+│   │   ├── MapViewInner.tsx     #   地図表示（Leaflet実装）
+│   │   ├── SearchFilter.tsx     #   検索フィルターフォーム
+│   │   ├── SearchResults.tsx    #   検索結果一覧
+│   │   └── SearchSection.tsx    #   検索セクション全体
+│   ├── surveys/                 # アンケート機能
+│   │   ├── SendSurveyModal.tsx  #   アンケート送信モーダル
+│   │   └── SurveyBuilder.tsx    #   アンケート作成フォーム
+│   └── ui/                      # 汎用UIコンポーネント
+│       ├── Badge.tsx            #   バッジ
+│       ├── BookmarkIcon.tsx     #   ブックマークアイコン
+│       ├── Button.tsx           #   ボタン
+│       ├── Card.tsx             #   カード
+│       ├── Input.tsx            #   入力フィールド
+│       ├── Loading.tsx          #   ローディング表示
+│       ├── Modal.tsx            #   モーダルダイアログ
+│       └── ToggleSwitch.tsx     #   トグルスイッチ
+│
+├── hooks/                       # カスタムReactフック（ページ層）
+│   ├── use-Auth.ts              #   認証状態管理
+│   ├── useAccountDeletion.ts    #   アカウント削除処理
+│   └── useDevice.ts             #   デバイス判定（PC/スマホ）
+│
+├── lib/                         # 共有ユーティリティ・ビジネスロジック
+│   ├── auth/                    # 認証ヘルパー
+│   │   ├── auth-helpers.ts      #   認証ユーティリティ関数
+│   │   └── deleteAccount.ts     #   アカウント削除処理
+│   ├── hooks/                   # カスタムフック（ビジネスロジック層）
+│   │   ├── useAuth.tsx          #   認証状態管理（Provider連携）
+│   │   ├── useBookmarks.ts      #   ブックマーク管理
+│   │   ├── useFacilities.ts     #   事業所データ取得
+│   │   ├── useMessages.ts       #   メッセージ送受信
+│   │   ├── useSearch.ts         #   検索ロジック
+│   │   ├── useSurveys.ts        #   アンケート管理
+│   │   └── useUnreadCount.ts    #   未読メッセージ数
+│   ├── supabase/                # Supabaseクライアント
+│   │   ├── bookmarks.ts         #   ブックマークAPI
+│   │   ├── client.ts            #   ブラウザ用クライアント初期化
+│   │   ├── server.ts            #   サーバー用クライアント初期化
+│   │   └── types.ts             #   Supabase型定義
+│   ├── utils/                   # ユーティリティ関数
+│   │   ├── constants.ts         #   定数定義
+│   │   ├── helpers.ts           #   汎用ヘルパー
+│   │   ├── userType.ts          #   ユーザータイプ判定
+│   │   └── validation.ts        #   バリデーション
+│   ├── validation/              # フォームバリデーション
+│   │   └── form-validation.ts   #   Zodスキーマ定義
+│   ├── middleware.ts            # ミドルウェアユーティリティ
+│   └── supabase.ts              # Supabaseクライアント（レガシー）
+│
+├── pages/                       # Next.js ページ（Pages Router）
+│   ├── _app.tsx                 # アプリケーションエントリーポイント
+│   ├── index.tsx                # トップページ（事業所検索）
+│   ├── dashboard.tsx            # ユーザーダッシュボード
+│   ├── register.tsx             # ユーザー登録
+│   ├── search-test.tsx          # 検索テストページ
+│   ├── auth/                    # 認証関連ページ
+│   │   ├── auth.tsx             #   認証ページ
+│   │   ├── callback.tsx         #   OAuth コールバック
+│   │   ├── facilitylogin.tsx    #   事業所ログイン
+│   │   ├── facilityregister.tsx #   事業所登録
+│   │   ├── userlogin.tsx        #   利用者ログイン
+│   │   └── verify-email.tsx     #   メール確認
+│   ├── business/                # 事業所向けページ
+│   │   └── mypage.tsx           #   事業所マイページ
+│   ├── contact/                 # お問い合わせ
+│   │   ├── index.tsx            #   お問い合わせフォーム
+│   │   └── success.tsx          #   送信完了
+│   ├── facilities/              # 事業所詳細
+│   │   └── [id].tsx             #   事業所詳細ページ（動的ルート）
+│   ├── mypage/                  # 利用者マイページ
+│   │   └── index.tsx            #   マイページ
+│   └── api/                     # APIルート
+│       ├── register.ts          #   ユーザー登録
+│       ├── delete-user.ts       #   ユーザー削除
+│       ├── test-db.ts           #   DB接続テスト
+│       ├── generate-service-plan.ts # サービス計画生成（AI）
+│       ├── auth/                #   認証API
+│       │   ├── create-facility-profile.ts # 事業所プロフィール作成
+│       │   ├── delete-account.ts          # アカウント削除
+│       │   └── logout/route.ts            # ログアウト
+│       ├── facilities/          #   事業所API
+│       │   ├── [id].ts          #     事業所詳細取得
+│       │   └── register.ts     #     事業所登録
+│       ├── search/              #   検索API
+│       │   └── facilities.ts    #     事業所検索
+│       └── service-plans/       #   サービス計画API
+│           └── index.ts         #     サービス計画CRUD
+│
+├── types/                       # TypeScript型定義
+│   ├── database.ts              # DBスキーマ型・地区・サービスカテゴリ定義
+│   ├── auth.ts                  # 認証関連型
+│   └── survey.ts                # アンケート関連型
+│
+├── utils/                       # ユーティリティ
+│   └── supabase/
+│       └── middleware.ts        # Supabaseサーバーサイドミドルウェア
+│
+├── scripts/                     # スクリプト
+│   └── import-wamnet-data.js    # WAMNETデータのSupabaseインポート
+│
+├── styles/                      # スタイル
+│   └── globals.css              # グローバルCSS（Tailwind設定含む）
+│
+├── public/                      # 静的ファイル
+│
+├── middleware.ts                 # Next.js ミドルウェア（認証チェック）
+├── next.config.ts               # Next.js設定
+├── tailwind.config.js           # Tailwind CSS設定
+├── tsconfig.json                # TypeScript設定
+├── eslint.config.mjs            # ESLint設定
+├── package.json                 # 依存関係・スクリプト定義
+├── wamnet.csv                   # 事業所データ（CSV）
+├── CLAUDE.md                    # Claude Code向けプロジェクト情報
+└── LICENSE                      # MITライセンス
 ```
 
 ## セットアップ方法
 
-1.  **リポジトリのクローン**:
-    ```bash
-    git clone https://github.com/your-username/care-connect.git
-    cd care-connect
-    ```
-    (注: `your-username` は実際のGitHubユーザー名または組織名に置き換えてください)
+### 1. リポジトリのクローン
 
-2.  **依存関係のインストール**:
-    ```bash
-    npm install
-    # または yarn install / pnpm install / bun install
-    ```
+```bash
+git clone https://github.com/soysaucesoy/codeshare-Hackathon.git
+cd codeshare-Hackathon
+```
 
-3.  **環境変数の設定**:
-    プロジェクトルートに `.env.local` ファイルを作成し、Supabaseの環境変数を設定します。
+### 2. 依存関係のインストール
 
-5.  **開発サーバーの起動**:
-    ```bash
-    npm run dev
-    # または yarn dev / pnpm dev / bun dev
-    ```
-    ブラウザで `http://localhost:3000` を開くとアプリケーションが表示されます。
+```bash
+npm install
+```
 
-## 各ファイルのコード概要
+### 3. 環境変数の設定
 
-### `pages/index.tsx`
+プロジェクトルートに `.env.local` ファイルを作成し、以下の環境変数を設定します。
 
-アプリケーションのメインページです。
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
 
-*   `SearchFilter` コンポーネントをレンダリングし、事業所名、地区、サービス、空き状況による検索フォームを提供します。
-*   検索条件に基づいて `/api/search/facilities` エンドポイントにAPIリクエストを送信し、検索結果を取得します。
-*   `SearchResults` コンポーネントを使用して、取得した事業所情報を表示します。
-*   初回アクセス時には、統計情報、提供サービスの一覧、アカウント作成を促すCTA（Call To Action）セクションが表示されます。
+### 4. 開発サーバーの起動
 
-### `pages/search-test.tsx`
+```bash
+npm run dev
+```
 
-検索機能のテストを目的としたシンプルなページです。
+ブラウザで http://localhost:3000 を開くとアプリケーションが表示されます。
 
-*   事業所名による検索入力フィールドと検索ボタンを提供します。
-*   `/api/search/facilities` エンドポイントを呼び出し、検索結果をJSON形式で表示します。開発中のデバッグやAPIの動作確認に利用されます。
+### 5. データインポート（任意）
 
-### `lib/supabase/client.ts`
+WAMNETの事業所データをSupabaseにインポートする場合：
 
-クライアントサイド（ブラウザ）でSupabaseクライアントを初期化するための設定ファイルです。
+```bash
+node scripts/import-wamnet-data.js
+```
 
-*   `@supabase/auth-helpers-nextjs` の `createClientComponentClient` を使用して、Next.jsのクライアントコンポーネントからSupabaseにアクセスするためのクライアントインスタンスを作成しエクスポートします。
+## コマンド一覧
 
-### `lib/supabase/server.ts`
+| コマンド | 説明 |
+|---|---|
+| `npm run dev` | 開発サーバーの起動（localhost:3000） |
+| `npm run build` | プロダクションビルド |
+| `npm start` | プロダクションサーバーの起動 |
+| `npm run lint` | ESLintの実行 |
 
-サーバーサイド（Next.jsのAPIルートやサーバーコンポーネント）でSupabaseクライアントを初期化するための設定ファイルです。
+## ライセンス
 
-*   `@supabase/ssr` の `createServerClient` を使用し、サーバー環境からSupabaseに安全にアクセスするためのクライアントインスタンスを作成します。クッキーを介して認証情報を管理します。
+本プロジェクトは [MIT License](./LICENSE) の下で公開されています。
 
-### `components/search/FacilityCard.tsx`
+- 商用利用、改変、再配布は自由です。
+- 本ソフトウェアは「現状のまま」提供されます。利用により生じた損害について、開発者は一切の責任を負いません。
+- 詳細は [LICENSE](./LICENSE) ファイルをご確認ください。
 
-個々の事業所情報を表示するための再利用可能なReactコンポーネントです。
+## コントリビューション
 
-*   事業所の名前、地区、説明、アピールポイント、提供サービス、電話番号、ウェブサイト、画像などの情報を整形して表示します。
-*   `Link` コンポーネントを使用して、事業所の詳細ページへのナビゲーションを提供します。
-*   ブックマークやメッセージ送信などのアクションボタンも含まれています。
-*   内部で `Badge`, `Button`, `Card` といった汎用UIコンポーネントを使用しています。
+Issue や Pull Request は歓迎します。バグ報告、機能提案、コード改善など、お気軽にご参加ください。
 
-### `components/search/SearchSection.tsx`
-
-検索フォームとフィルターオプションを提供するコンポーネントです。
-
-*   `useSearch` カスタムフックを利用して検索ロジックを管理します。
-*   事業所名、地区、サービスカテゴリ、空き状況で絞り込みを行うための入力フィールドと選択肢を提供します。
-*   検索ボタンをクリックすると、親コンポーネントに検索結果を渡します。
-*   (注: `pages/index.tsx` では `SearchFilter` が使用されており、この `SearchSection` は `pages/search-test.tsx` で使用されているか、あるいは代替の実装として存在します。)
+1. このリポジトリをフォーク
+2. フィーチャーブランチを作成（`git checkout -b feature/your-feature`）
+3. 変更をコミット（`git commit -m 'Add your feature'`）
+4. ブランチにプッシュ（`git push origin feature/your-feature`）
+5. Pull Request を作成
