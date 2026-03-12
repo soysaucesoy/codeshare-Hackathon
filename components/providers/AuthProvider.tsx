@@ -38,6 +38,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   const enrichUserWithType = async (user: User): Promise<User> => {
+    // auth metadataに既にuser_typeがある場合はそれを信頼する
+    // （signUp時にoptions.dataで設定されるため、通常は存在する）
+    if (user.user_metadata?.user_type) {
+      return user;
+    }
+    // auth metadataにuser_typeがない場合のみ、DBから取得を試みる
     try {
       const { data: userData } = await supabase
         .from('users')
