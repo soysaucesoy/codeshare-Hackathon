@@ -1200,7 +1200,7 @@ const UserMyPage: React.FC = () => {
                   }}
                   style={{
                     flex: '1',
-                    minWidth: '123px',
+                    minWidth: '140px',
                     padding: '1rem 1.5rem',
                     background: isActive ? '#22c55e' : 'transparent',
                     color: isActive ? 'white' : '#6b7280',
