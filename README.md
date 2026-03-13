@@ -15,7 +15,7 @@
 
 ## 関連リンク
 
-- [説明資料](https://www.canva.com/design/DAG2rB_Px9s/4yV3ZJZcQUK3jZ0obRT1nA/view?utm_content=DAG2rB_Px9s&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6dc62b06f7)
+- [説明資料](https://www.canva.com/design/DAHDzOeLFG0/YDRzQJf8zzta5E5kI-U8WA/view?utm_content=DAHDzOeLFG0&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6053d75958)
 - [プレスリリース](https://odhackathon.metro.tokyo.lg.jp/collection/64/?year=2025)
 - [サービス公開URL](https://codeshare-hackathon-bw6g.vercel.app/)
 
