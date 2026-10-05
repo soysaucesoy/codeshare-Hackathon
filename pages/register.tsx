@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { T_DISTRICTS, SERVICE_CATEGORIES } from '@/types/database';
+import { supabase } from '@/lib/supabase/client';
 
 const districts = T_DISTRICTS;
 
@@ -48,10 +49,16 @@ const RegisterPage: React.FC = () => {
     };
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('事業者アカウントでログインしてください。');
+      }
+
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(registrationData),
       });

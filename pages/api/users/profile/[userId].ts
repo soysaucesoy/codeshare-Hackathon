@@ -1,8 +1,9 @@
 // pages/api/users/profile/[userId].ts
 // サービスロールキーを使って利用者プロフィールを取得するAPIルート
-// （RLSを迂回し、事業者など他ユーザーからでも閲覧可能にする）
+// （RLSを迂回するため、閲覧できるのは本人と、その利用者とDMでやり取りしている事業所に限定する）
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { getUserFromRequest } from '@/lib/auth/api-auth'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'userId is required' })
   }
 
+  const requester = await getUserFromRequest(req)
+  if (!requester) {
+    return res.status(401).json({ error: 'Authentication required' })
+  }
+
   try {
+    if (requester.id !== userId && !(await hasConversationWithUser(requester.id, userId))) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
     // 基本情報
     const { data: userRow, error: userError } = await supabaseAdmin
       .from('users')
@@ -65,4 +75,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('プロフィール取得エラー:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
+}
+
+// requesterId が所有する事業所と userId の利用者の間に会話があるか
+async function hasConversationWithUser(requesterId: string, userId: string): Promise<boolean> {
+  const { data: facilities, error: facilityError } = await supabaseAdmin
+    .from('facilities')
+    .select('id')
+    .or(`user_id.eq.${requesterId},profile_id.eq.${requesterId}`)
+
+  if (facilityError || !facilities || facilities.length === 0) return false
+
+  const { count, error: convError } = await supabaseAdmin
+    .from('conversations')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('facility_id', facilities.map(f => f.id))
+
+  return !convError && (count ?? 0) > 0
 }

@@ -1,5 +1,7 @@
 // pages/api/auth/create-facility-profile.ts
 // サービスロールキーを使いRLSをバイパスして事業者プロファイルを作成する
+// 新規登録直後（メール確認前でセッションがない）に呼ばれるため、トークンではなく
+// auth.users に記録されたそのアカウント自身の登録情報（user_type = 'facility'）で判定する
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
@@ -11,9 +13,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, fullName, email } = req.body;
+  const { userId, fullName } = req.body;
 
-  if (!userId || !fullName) {
+  if (!userId || typeof userId !== 'string' || !fullName) {
     return res.status(400).json({ error: 'userId and fullName are required' });
   }
 
@@ -26,6 +28,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
+    // 0. 対象アカウントが事業者として登録されたものか確認する
+    //    （リクエストの値は信用せず、auth.users の登録情報を使う）
+    const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const authUser = authUserData?.user;
+
+    if (authUserError || !authUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (authUser.user_metadata?.user_type !== 'facility') {
+      return res.status(403).json({ error: 'Not registered as a facility account' });
+    }
+
+    const email = authUser.email;
+
     // 1. usersテーブルにレコードがなければ挿入
     //    （DBトリガーが設定されていた場合はすでに存在する可能性あり）
     const { data: existingUser, error: userSelectError } = await supabaseAdmin

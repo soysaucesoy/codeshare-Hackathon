@@ -264,7 +264,7 @@ const ServicePlanView: React.FC<{ plan: ServicePlanData }> = ({ plan }) => {
 const UserProfilePage: React.FC = () => {
   const router = useRouter()
   const { userId } = router.query
-  const { user, signOut } = useAuthContext()
+  const { user, session, signOut } = useAuthContext()
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -305,14 +305,17 @@ const UserProfilePage: React.FC = () => {
   const [servicePlan, setServicePlan] = useState<ServicePlanData | null>(null)
 
   useEffect(() => {
-    if (!userId || typeof userId !== 'string') return
+    // APIは認証必須のため、セッション確定後に取得する（未ログイン時はログイン案内を表示）
+    if (!userId || typeof userId !== 'string' || !session?.access_token) return
 
     const fetchProfile = async () => {
       setLoading(true)
       setNotFound(false)
       try {
         // APIルート経由で取得（サービスロールキーを使うためRLSを迂回）
-        const res = await fetch(`/api/users/profile/${userId}`)
+        const res = await fetch(`/api/users/profile/${userId}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
         if (!res.ok) {
           setNotFound(true)
           return
@@ -370,7 +373,7 @@ const UserProfilePage: React.FC = () => {
     }
 
     fetchProfile()
-  }, [userId])
+  }, [userId, session?.access_token])
 
   // 未ログインは認証ページへ
   if (!user) {
