@@ -9,6 +9,7 @@ import {
   AlertCircle, CheckCircle, Image, Star, ArrowLeft, MessageCircle, ClipboardList
 } from 'lucide-react'
 import { useAuthContext } from '@/components/providers/AuthProvider'
+import { withUserTypeGuard } from '@/components/auth/UserTypeGuard'
 import { useMessages } from '@/lib/hooks/useMessages'
 import { supabase } from '@/lib/supabase/client'
 import { T_DISTRICTS, SERVICE_CATEGORIES } from '@/types/database'
@@ -1858,4 +1859,5 @@ const FacilityMyPage: React.FC = () => {
   )
 }
 
-export default FacilityMyPage
+// 別種別のユーザーではページをマウントしない（不要なデータ読み込み・作成を防ぐ）
+export default withUserTypeGuard(FacilityMyPage)

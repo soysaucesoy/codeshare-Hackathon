@@ -4,6 +4,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr' // Cookie
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   getHomePathForUserType,
+  getUserTypeMismatchRedirect,
   isAuthLoginPage,
   isProtectedPath,
   UNAUTHENTICATED_REDIRECT,
@@ -48,19 +49,30 @@ export async function updateSession(request: NextRequest) {
     return redirectWithCookies(request, response, UNAUTHENTICATED_REDIRECT)
   }
 
+  if (!user) return response
+
+  // auth metadataにuser_typeがない場合のみDBから取得（AuthProviderと同じ判定）
+  const resolveUserType = async () => {
+    if (user.user_metadata?.user_type) return user.user_metadata.user_type
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', user.id)
+      .maybeSingle()
+    return userData?.user_type
+  }
+
   // ログイン済みでログインページへアクセス → ユーザー種別ごとの遷移先へ
-  if (user && isAuthLoginPage(pathname)) {
-    let userType = user.user_metadata?.user_type
-    // auth metadataにuser_typeがない場合のみDBから取得（AuthProviderと同じ判定）
-    if (!userType) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_type')
-        .eq('id', user.id)
-        .maybeSingle()
-      userType = userData?.user_type
+  if (isAuthLoginPage(pathname)) {
+    return redirectWithCookies(request, response, getHomePathForUserType(await resolveUserType()))
+  }
+
+  // 別種別の専用ページへアクセス（例: 事業者が /user/mypage）→ 自分のマイページへ
+  if (isProtectedPath(pathname)) {
+    const mismatchRedirect = getUserTypeMismatchRedirect(pathname, await resolveUserType())
+    if (mismatchRedirect) {
+      return redirectWithCookies(request, response, mismatchRedirect)
     }
-    return redirectWithCookies(request, response, getHomePathForUserType(userType))
   }
 
   return response

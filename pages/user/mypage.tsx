@@ -10,6 +10,7 @@ import {
   Calendar, FileText, MessageCircle
 } from 'lucide-react'
 import { useAuthContext } from '@/components/providers/AuthProvider'
+import { withUserTypeGuard } from '@/components/auth/UserTypeGuard'
 import { useBookmarks } from '@/lib/hooks/useBookmarks'
 import { useMessages } from '@/lib/hooks/useMessages'
 import { supabase } from '@/lib/supabase/client'
@@ -2214,4 +2215,5 @@ const UserMyPage: React.FC = () => {
   )
 }
 
-export default UserMyPage
+// 別種別のユーザーではページをマウントしない（不要なデータ読み込み・作成を防ぐ）
+export default withUserTypeGuard(UserMyPage)

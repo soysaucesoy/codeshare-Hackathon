@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/router';
 import {
   getHomePathForUserType,
+  getUserTypeMismatchRedirect,
   isAuthLoginPage,
   isProtectedPath,
   UNAUTHENTICATED_REDIRECT,
@@ -165,9 +166,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleRedirect = async () => {
       if (user) { // ログイン後
-        if (isAuthLoginPage(router.pathname)) {
+        const userType = user.user_metadata?.user_type;
+        const targetPath = isAuthLoginPage(router.pathname)
+          ? getHomePathForUserType(userType)
+          : getUserTypeMismatchRedirect(router.pathname, userType); // 別種別の専用ページ
+        if (targetPath) {
           setIsRedirecting(true);
-          await router.replace(getHomePathForUserType(user.user_metadata?.user_type));
+          await router.replace(targetPath);
           setIsRedirecting(false);
         }
       } else { // 未ログイン時：認証が必要なページのみトップへリダイレクト
