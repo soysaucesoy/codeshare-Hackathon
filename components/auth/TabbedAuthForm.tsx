@@ -1,5 +1,5 @@
 // components/auth/TabbedAuthForm.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Lock, Home, Eye, EyeOff, User } from 'lucide-react'
@@ -33,17 +33,13 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
   const [success, setSuccess] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
 
+  // ログイン済みの場合の遷移は middleware / AuthProvider が行う（ユーザー種別ごとに遷移先が異なるため、ここでは遷移しない）
   const shouldRedirect = router.isReady && !!user && router.pathname !== '/'
-
-  useEffect(() => {
-    if (!shouldRedirect) return
-    router.replace('/')
-  }, [shouldRedirect, router])
 
   if (shouldRedirect) {
     return (
       <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>ログイン済みです。ホームへ移動しています…</p>
+        <p>ログイン済みです。移動しています…</p>
       </div>
     )
   }

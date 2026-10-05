@@ -3,6 +3,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/router';
+import {
+  getHomePathForUserType,
+  isAuthLoginPage,
+  isProtectedPath,
+  UNAUTHENTICATED_REDIRECT,
+} from '@/lib/auth/routes';
 
 interface AuthContextType {
   user: User | null;
@@ -23,12 +29,6 @@ export const useAuthContext = () => {
   }
   return context;
 };
-
-// 認証が必要なルート（未ログイン時にトップへリダイレクト）
-const PROTECTED_ROUTES = ['/dashboard', '/user/mypage', '/business/mypage'];
-
-// ログイン済みユーザーをリダイレクトするログインページ（verify-email/callbackは除外）
-const AUTH_LOGIN_PAGES = ['/auth/userlogin', '/auth/facilitylogin', '/auth/auth', '/auth/facilityregister', '/auth/register'];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -157,26 +157,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // 認証状態に応じたリダイレクトを管理する統合されたuseEffect
+  // ページ遷移時のリダイレクトは middleware がサーバー側で行う。
+  // ここではページ遷移を伴わない認証状態の変化（ログインフォーム送信後・ログアウト後など）を、
+  // middleware と同じルール（lib/auth/routes.ts）で処理する。
   useEffect(() => {
     if (loading || isRedirecting) return; // 読み込み中またはリダイレクト中はなにもしない
 
     const handleRedirect = async () => {
       if (user) { // ログイン後
-        if (AUTH_LOGIN_PAGES.some(p => router.pathname === p)) {
+        if (isAuthLoginPage(router.pathname)) {
           setIsRedirecting(true);
-          const userType = user.user_metadata?.user_type;
-          const targetPath = userType === 'facility' ? '/business/mypage' : '/';
-          await router.replace(targetPath);
+          await router.replace(getHomePathForUserType(user.user_metadata?.user_type));
           setIsRedirecting(false);
         }
       } else { // 未ログイン時：認証が必要なページのみトップへリダイレクト
-        const isProtected = PROTECTED_ROUTES.some(route =>
-          router.pathname === route || router.pathname.startsWith(route + '/')
-        );
-        if (isProtected) {
+        if (isProtectedPath(router.pathname)) {
           setIsRedirecting(true);
-          await router.replace('/');
+          await router.replace(UNAUTHENTICATED_REDIRECT);
           setIsRedirecting(false);
         }
       }
