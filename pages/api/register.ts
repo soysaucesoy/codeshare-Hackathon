@@ -2,6 +2,7 @@
 // pages/api/register.ts - 新規事業所登録API
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { getUserFromRequest } from '@/lib/auth/api-auth';
 
 // 環境変数から Supabase 設定を取得
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,7 +35,34 @@ export default async function handler(
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
+  // ログイン中の事業者アカウントのみ登録可能（事業所はそのアカウントに紐づける）
+  const requester = await getUserFromRequest(req);
+  if (!requester) {
+    return res.status(401).json({ error: 'ログインが必要です。' });
+  }
+
   try {
+    const { data: requesterRow } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', requester.id)
+      .maybeSingle();
+
+    if (requesterRow?.user_type !== 'facility') {
+      return res.status(403).json({ error: '事業者アカウントでログインしてください。' });
+    }
+
+    // 1アカウントにつき1事業所まで
+    const { data: existingFacility } = await supabase
+      .from('facilities')
+      .select('id')
+      .eq('user_id', requester.id)
+      .maybeSingle();
+
+    if (existingFacility) {
+      return res.status(409).json({ error: 'このアカウントには既に事業所が登録されています。マイページから編集してください。' });
+    }
+
     const { 
       name,
       district,
@@ -55,6 +83,7 @@ export default async function handler(
     const { data: facilityData, error: facilityError } = await supabase
       .from('facilities')
       .insert({
+        user_id: requester.id,
         name,
         district,
         address,

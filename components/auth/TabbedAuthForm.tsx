@@ -6,7 +6,6 @@ import { ArrowLeft, Mail, Lock, Home, Eye, EyeOff, User } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
-import { supabase } from '@/lib/supabase/client'
 
 interface TabbedAuthFormProps {
   defaultTab?: 'login' | 'register'
@@ -172,51 +171,16 @@ const TabbedAuthForm: React.FC<TabbedAuthFormProps> = ({ defaultTab = 'login' })
 
       console.log('認証成功、ユーザーID:', userId)
 
-      // データベースレコードの作成を試行
-      try {
-        console.log('=== データベースレコード作成開始 ===')
-        
-        const { data: userCreationResult, error: userCreationError } = await supabase
-          .rpc('upsert_user_profile', {
-            p_user_id: userId,
-            p_email: registerData.email,
-            p_full_name: registerData.fullName,
-            p_phone_number: null,
-            p_district: null
-          })
-
-        console.log('ユーザー作成関数結果:', {
-          result: userCreationResult,
-          error: userCreationError
-        })
-
-        if (userCreationError) {
-          console.error('ユーザーレコード作成エラー:', userCreationError)
-          setError(`データベース保存に失敗しましたが、認証は完了しています。管理者にお問い合わせください。エラー: ${userCreationError.message}`)
-          setSuccess(`認証は完了しました。${authData.user?.email_confirmed_at ? 'ログインページに進んでください。' : 'メール確認が必要です。'}`)
-        } else if (!userCreationResult?.success) {
-          console.error('ユーザーレコード作成失敗:', userCreationResult)
-          setError(`データベース保存に失敗しました: ${userCreationResult?.error || '不明なエラー'}`)
-          setSuccess('認証は完了していますが、プロフィール作成で問題が発生しました。')
-        } else {
-          console.log('データベースレコード作成成功')
-          
-          if (authData.user?.email_confirmed_at) {
-            setSuccess('アカウント作成が完了しました！ログインタブに切り替えます。')
-            setTimeout(() => {
-              setActiveTab('login')
-              setLoginData({ email: registerData.email, password: '' })
-            }, 2000)
-          } else {
-            setSuccess('アカウント作成が完了しました！メール確認画面に移動します。')
-            setTimeout(() => router.push('/auth/verify-email'), 2000)
-          }
-        }
-
-      } catch (dbError) {
-        console.error('データベース処理例外:', dbError)
-        setError('データベース処理で予期しないエラーが発生しました')
-        setSuccess('認証は完了していますが、プロフィール作成で問題が発生しました。')
+      // users / user_details のレコードは DB トリガー（handle_new_user）が作成する
+      if (authData.user?.email_confirmed_at) {
+        setSuccess('アカウント作成が完了しました！ログインタブに切り替えます。')
+        setTimeout(() => {
+          setActiveTab('login')
+          setLoginData({ email: registerData.email, password: '' })
+        }, 2000)
+      } else {
+        setSuccess('アカウント作成が完了しました！メール確認画面に移動します。')
+        setTimeout(() => router.push('/auth/verify-email'), 2000)
       }
 
     } catch (err: any) {

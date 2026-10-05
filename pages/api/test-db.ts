@@ -10,6 +10,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // デバッグ用APIのため、開発環境以外では存在しないものとして扱う
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
